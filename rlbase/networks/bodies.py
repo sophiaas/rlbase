@@ -47,8 +47,10 @@ class ConvolutionalBody(BaseBody):
 class FullyConnectedBody(BaseBody):
     
     def __init__(self, config):
-
-        self.define_network    def define_network(self):
+        super().__init__(config)
+        self.define_network()
+        
+    def define_network(self):
         self.network = nn.ModuleList([nn.Linear(self.indim, self.hdim)])
         for i in range(1, self.nlayers):
             self.network.append(nn.Linear(hdim, hdim))

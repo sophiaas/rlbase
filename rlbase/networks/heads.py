@@ -1,13 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.autograd import Variable
-from torch.distributions import Categorical
-
-from core import ReplayBuffer, Memory
-from core.utils import cuda_if_needed
-
+from .architectures import Linear3D
 
 class BaseHead(nn.Module):    
     
@@ -51,7 +44,7 @@ class OptionCriticHead(BaseHead):
         self.n_options = self.config.n_options
         
     def define_network(self):
-        self.network = nn.Linear3D(self.hdim, self.n_options, self.action_dim)
+        self.network = Linear3D(self.hdim, self.n_options, self.action_dim)
         #TODO: Multilayer
             
     def forward(self, x, option):
@@ -59,7 +52,3 @@ class OptionCriticHead(BaseHead):
         x = self.activation(self.network(x, option))
         return x
     
-    
-
-
-      
