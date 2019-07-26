@@ -1,137 +1,88 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-from torch.distributions import Categorical
-import random
-from core import ReplayBuffer, Memory
-from core.utils import cuda_if_needed
-from agents import BaseAgent
-import numpy as np
+# from torch.optim.lr_scheduler import StepLR
+from .base import BaseAgent
 
-class A2CAgent(BaseAgent):
+
+class A2C(BaseAgent):
+    
     def __init__(self, config):
-        BaseAgent.__init__(self, config)
-        self.config = config
-        self.env = self.set_env()
-        self.network = self.set_network()
+        super(A2C, self).__init__(config)
         
-
-class AC_Policy(BaseAgent):
-    def __init__(self, config)
-#                  num_actions, indim, hdim, nlayers, env, args, epsilon=None, epsilon_greedy=False, num_options=None):
-        super(AC_Policy, self).__init__(args)
         self.config = config
-        self.env = env
+        self.set_network_params()
 
-        self.action_head = nn.Linear(hdim, num_actions)
+        """FIX THIS"""
+        self.observation_net = config.network.body.architecture(config.network.body)
+        self.policy = config.network.policy_head.architecture(config.network.policy_head, 
+                                                              self.observation_net)
+        self.value_net = config.network.value_head.architecture(config.network.value_head, 
+                                                           self.observation_net)
+        """"""
+        self.model = {'policy': self.policy, 'value': self.value_net}
 
-    def forward(self, x, raw_x=None):
-        if self.img_obs:
-            x = torch.transpose(torch.transpose(x, 1, 3), 2, 3)
-            x = self.layers(x)
-            x = x.reshape(x.shape[0], -1)
-        else:
-            for layer in self.layers:
-                x = F.relu(layer(x))
-        action_scores = self.action_head(x)
-        # subtract max log prob
-        max_val, max_idx = torch.max(action_scores, 1)
-        action_scores = action_scores - torch.max(action_scores[:, max_idx])  # subtract max logit
-        probs = torch.exp(action_scores)
-        probs = torch.clamp(probs, float(np.finfo(np.float32).eps), 1)  # for numerical instabilities
-        if raw_x is not None:
-            assert x.size(0) == 1
-            if not self.args.img_obs and self.env.allow_impossible == False:
-                valid_actions = sorted(self.env.get_possible_actions(raw_x))
-                nonvalid_actions = [i for i in range(self.env.get_num_actions()) if i not in valid_actions]
-                nonvalid_actions_th = cuda_if_needed(torch.LongTensor(nonvalid_actions), self.args)
-    #             zero out non-valid actions
-                probs[:, nonvalid_actions_th] = 0
-    #             renormalize
-                z = torch.sum(probs)
-                probs = probs/z
-        return probs
-
-    def select_action(self, state, episode):
-        action_dist = self.forward(state)
-        m = Categorical(action_dist)
-        action = m.sample()
-        return action.data
-
-    def get_log_prob(self, state, action):
-        # not volatile
-        action_dist = self.forward(state)
-        m = Categorical(action_dist)
-        log_prob = m.log_prob(action)
-        return log_prob
-
-class AC_Value(BaseAgent):
-    def __init__(self, indim, hdim, nlayers, args):
-        super(AC_Value, self).__init__(indim, hdim, nlayers, args)
-        self.value_head = nn.Linear(hdim, 1)  # AC
-        self.img_obs = args.img_obs
-
-    def forward(self, x):
-        if self.img_obs:
-            x = torch.transpose(torch.transpose(x, 1, 3), 2, 3)
-            x = self.layers(x)
-            x = x.reshape(x.shape[0], -1)
-        else:
-            for layer in self.layers:
-                x = F.relu(layer(x))
-        value = self.value_head(x)
-        return value
-
-class AC_Model(object):
-    def __init__(self, num_actions, indim, env, args, epsilon=None, epsilon_greedy=False):
-        super(AC_Model, self).__init__()
-        self.hierarchical = False
-        self.args = args
-        self.env = env
-        self.policy = AC_Policy(num_actions=num_actions, indim=indim, hdim=args.hdim, nlayers=args.nlayers, env=env, args=args)
-        self.value_net = AC_Value(indim=indim, hdim=args.hdim, nlayers=args.nlayers, args=args)
-        self.model = {'policy': self.policy, 'value_net': self.value_net}
-        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)  # TODO: make this SGD
-        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=args.lr)  # TODO: make this SGD
-        self.optimizer = [self.policy_optimizer, self.value_optimizer]
-        self.replay_buffer = Memory()
-
-        print('policy net')
-        print(self.policy)
-        print('value net')
-        print(self.value_net)
-
-    def cuda(self):
-        self.policy.cuda()
-        self.value_net.cuda()
-
-    def select_action(self, state):
-        state = cuda_if_needed(torch.from_numpy(state).float().unsqueeze(0), self.args)
-        action = self.policy.select_action(Variable(state, volatile=True), state)  # volatile
-        log_prob = self.policy.get_log_prob(Variable(state), Variable(action))  # not volatile
-        state_value = self.value_net(Variable(state))  # not volatile
-        return action[0], log_prob, state_value
-
-    def compute_returns(self, rewards):
+        
+        self.policy_optimizer = config.training.optim(self.policy.parameters(), lr=config.training.lr)
+        self.value_optimizer = config.training.optim(self.value_net.parameters(), lr=config.training.lr)
+        self.optimizer = {'policy': self.policy_optimizer, 'value': self.value_optimizer}
+        
+        self.policy_lr_scheduler =config.training.lr_scheduler(self.policy_optimizer, step_size=1, 
+                                                               gamma=config.training.lr_gamma)
+        self.value_lr_scheduler = config.training.lr_scheduler(self.value_optimizer, step_size=1, 
+                                                               gamma=config.training.lr_gamma)
+        self.lr_scheduler = [self.policy_lr_scheduler, self.value_lr_scheduler]
+        
+        print('value_net \n {}'.format(self.value_net))
+        print('policy \n {}'.format(self.policy))
+        
+    def set_network_params(self):
+        self.config.network.body.indim = self.env.observation_space.n
+        self.config.network.policy_head.outdim = self.env.action_space.n
+        self.config.network.value_head.outdim = self.env.action_space.n
+        
+    def compute_returns(self, rewards, masks):
         returns = []
         prev_return = 0
-        for r in rewards[::-1]:
-            prev_return = r + self.args.gamma * prev_return
+        for i, r in enumerate(reversed(rewards)):
+            prev_return = r + self.config.algorithm.gamma * prev_return * masks[i]
             returns.insert(0, prev_return)
         return returns
 
-    def improve(self, lr_mult, optim_epochs=None):
-        batch = self.replay_buffer.sample()
-        b_lp = batch.logprob
-        b_rew = batch.reward
-        b_v = batch.value
-        b_ret = self.compute_returns(b_rew)
-        self.policy_optimizer.lr = self.args.lr * lr_mult
-        self.value_optimizer.lr = self.args.lr * lr_mult
-        # print 'self.policy_optimizer.lr', self.policy_optimizer.lr
-        # print 'self.value_optimizer.lr', self.value_optimizer.lr
-        ac_step(b_lp, b_v, b_ret, self.policy_optimizer, self.value_optimizer, self.args)
-        self.replay_buffer.clear_buffer()
-        # TODO: maybe do something like lr_mult
+    def unpack_batch(self, batch):
+        log_probs = batch.log_prob.tolist()
+        rewards = batch.reward.tolist()
+        values = batch.value.tolist()
+        masks = list(1.0 - batch.done.to_numpy())
+        return log_probs, rewards, values, masks
+        
+    def compute_loss(self, batch):
+        print('batch length: {}'.format(len(batch)))
+        log_probs, rewards, values, masks = self.unpack_batch(batch)
+        returns = self.compute_returns(rewards, masks)
+            
+        policy_losses = []
+        value_losses = []
+               
+        for log_prob, value, r in zip(log_probs, values, returns):
+            reward = r - value.data
+            rr = torch.Tensor([r]).repeat(value.size())
+            policy_losses.append(torch.sum(-log_prob * Variable(reward)))
+            target = self.cuda_if_needed(Variable(rr))
+            value_losses.append(F.smooth_l1_loss(value, target))
+        
+        policy_loss = torch.stack(policy_losses).mean()
+        value_loss = torch.stack(value_losses).mean()
+        
+        print('policy loss: {}'.format(policy_loss))
+            
+        loss = [policy_loss, value_loss]
+        return loss
+
+#         for log_prob, value, r in zip(log_probs, values, returns):
+#             reward = r - value.data #[0, 0]  # this also is an issue
+#             rr = torch.Tensor([r]).repeat(value.size())  # copies, not merely pointers
+#             policy_losses.append(torch.sum(-log_prob * Variable(reward)))
+#             target = cuda_if_needed(Variable(rr), self.config)  # basically need r to be [1, num_indices] = [1, shape(value)]
+#             value_losses.append(F.smooth_l1_loss(value, target))
