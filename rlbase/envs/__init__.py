@@ -1,0 +1,1 @@
+from .fourrooms import FourRooms
