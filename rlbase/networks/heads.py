@@ -5,11 +5,13 @@ from .architectures import Linear3D
 class BaseHead(nn.Module):    
     
     def __init__(self, config):
-        head_config = config.network_head_config
-        self.hdim = head_config.hdim
-        self.action_dim = head_config.action_dim
-        self.nlayers = head_config.nlayers
-        self.activation = head_config.activation
+        super(BaseHead, self).__init__()
+#         head_config = config.network.head
+        self.config = config
+        self.hdim = config.hdim
+        self.outdim = config.outdim
+        self.nlayers = config.nlayers
+        self.activation = config.activation
     
     def define_network(self):
         return NotImplementedError
@@ -18,15 +20,15 @@ class BaseHead(nn.Module):
 class FullyConnectedHead(BaseHead):
     
     def __init__(self, config, body):
-        super().__init__(config)
+        super(FullyConnectedHead, self).__init__(config)
         self.define_network()
         self.body = body
         
     def define_network(self):
         self.network = nn.ModuleList([])
         for i in range(self.nlayers-1):
-            self.network.append(nn.Linear(hdim, hdim))
-        self.network.append(nn.Linear(hdim, self.action_dim))
+            self.network.append(nn.Linear(self.hdim, self.hdim))
+        self.network.append(nn.Linear(self.hdim, self.outdim))
             
     def forward(self, x):
         x = self.body.forward(x)
@@ -38,7 +40,7 @@ class FullyConnectedHead(BaseHead):
 class OptionCriticHead(BaseHead):
     
     def __init__(self, config, body):
-        super().__init__(config)
+        super(OptionCriticHead, self).__init__(config)
         self.define_network()
         self.body = body
         self.n_options = self.config.n_options

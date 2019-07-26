@@ -9,11 +9,12 @@ from torch.distributions import Categorical
 class BaseBody(nn.Module):    
     
     def __init__(self, config):
-        body_config = config.network_body_config
-        self.indim = body_config.indim
-        self.hdim = body_config.hdim
-        self.nlayers = body_config.nlayers
-        self.activation = body_config.activation
+        super(BaseBody, self).__init__()
+        self.config = config
+        self.indim = config.indim
+        self.hdim = config.hdim
+        self.nlayers = config.nlayers
+        self.activation = config.activation
     
     def define_network(self):
         return NotImplementedError
@@ -22,7 +23,7 @@ class BaseBody(nn.Module):
 class ConvolutionalBody(BaseBody):
     
     def __init__(self, config):
-        super().__init__(config)
+        super(ConvolutionalBody, self).__init__(config)
         self.define_network()
         
     def define_network(self):
@@ -47,13 +48,13 @@ class ConvolutionalBody(BaseBody):
 class FullyConnectedBody(BaseBody):
     
     def __init__(self, config):
-        super().__init__(config)
+        super(FullyConnectedBody, self).__init__(config)
         self.define_network()
         
     def define_network(self):
         self.network = nn.ModuleList([nn.Linear(self.indim, self.hdim)])
         for i in range(1, self.nlayers):
-            self.network.append(nn.Linear(hdim, hdim))
+            self.network.append(nn.Linear(self.hdim, self.hdim))
             
     def forward(self, x):
         for layer in self.network:
@@ -64,7 +65,7 @@ class FullyConnectedBody(BaseBody):
 class LSTMBody(BaseBody):
     
     def __init__(self, config):
-        super().__init__(config)
+        super(LSTMBody, self).__init__(config)
         self.define_network()
         
     def define_network(self):
