@@ -7,7 +7,7 @@ setup(
     url='git@github.com:sophiaas/rlbase.git',
     author='Sophia Sanborn',
     author_email='sanborn@berkeley.edu',
-    license='unlicense',
+    license='MIT',
     packages=['rlbase'],
     zip_safe=False
 )
