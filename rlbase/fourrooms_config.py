@@ -6,22 +6,24 @@ from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
 experiment = ExperimentConfig(
-    {'name': 'test_fourrooms_2',
+    {'name': 'ppo_test_fourrooms',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
     }
 )
 
-algorithm = A2CConfig(
-    {'gamma': 0.9
-    }
-)
+# algorithm = A2CConfig(
+#     {'gamma': 0.9
+#     }
+# )
+algorithm = PPOConfig()
 
 training = TrainingConfig(
     {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 100,
+     'weight_decay': 0.9,
+     'update_every': 10,
      'lr_scheduler': StepLR,
      'lr': 1e-5,
      'optim': Adam,
@@ -54,8 +56,7 @@ body = FCConfig(
 )
 
 network = NetworkConfig(
-    {'policy_head': policy_head,
-     'value_head': value_head,
+    {'heads': {'policy': policy_head, 'value': value_head},
      'body': body
     }
 )

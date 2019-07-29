@@ -5,6 +5,11 @@ from gym.envs.registration import register
 import torch
 
 
+"""
+The four rooms environment, adapted from 
+https://github.com/jeanharb/option_critic/blob/master/fourrooms/fourrooms.py
+"""
+
 class FourRooms(gym.Env):
     
     def __init__(self):
