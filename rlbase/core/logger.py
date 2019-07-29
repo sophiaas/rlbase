@@ -13,11 +13,13 @@ class Logger(object):
         self.config = config
         self.logdir = config.experiment.base_dir + config.experiment.name + '/'
         self.checkpointdir = self.logdir + 'checkpoints/'
+        self.episodedir = self.logdir + 'episodes/'
         self.data = pd.DataFrame()
         self.checkpoint = {}
         self.episode_data = pd.DataFrame()
         self.data_saved = False
         self.episode_data_saved = False
+        self.episode = 0
         
 #         #overwrites existing data
 #         if os.path.exists(self.logdir+'episode_data.csv'):
@@ -33,14 +35,21 @@ class Logger(object):
         self.save_config()
         
     def mkdir(self):
+        
         if self.config.experiment.debug:
             # overwrite
             if not os.path.exists(self.logdir):
                 os.makedirs(self.logdir)
                 os.makedirs(self.checkpointdir)
+#                 if self.config.experiment.save_episode_data:
+                os.makedirs(self.episodedir)
+                print('EPISODE DIR: {}'.format(self.episodedir))
         else:
             os.makedirs(self.logdir)
             os.makedirs(self.checkpointdir)
+#             if self.config.experiment.save_episode_data:
+            os.makedirs(self.episodedir)
+            print('EPISODE DIR: {}'.format(self.episodedir))
         
     def save_config(self):
         with open(self.logdir + 'config.p', 'wb') as f:
@@ -53,6 +62,7 @@ class Logger(object):
 
     def push(self, data):
         self.data = self.data.append(data, ignore_index=True)
+        self.episode = int(self.data['episode'].iloc[-1])
 
     def push_episode_data(self, episode_data):
         self.episode_data = self.episode_data.append(episode_data, ignore_index=True)
@@ -69,7 +79,9 @@ class Logger(object):
         self.data = pd.read_csv(self.logdir+'summary.p')
     
     def save_episode_data(self):
-        self.episode_data.to_pickle(self.logdir+'episode_data.p')
+        self.episode_data.to_pickle(self.episodedir
+                                    +'episode_data_{}.p'.format(self.episode))
+        self.episode_data.drop(self.episode_data.index, inplace=True)
 #         with open(self.logdir+'episode_data.csv', 'a') as f:
 #             if self.episode_data_saved:
 #                 self.episode_data.to_csv(f, header=False, index=False)
@@ -85,7 +97,7 @@ class Logger(object):
         
 #     def load_checkpoint(self, filename, checkpoint):
     def plot(self, variable):
-        plt.plot(self.data['episode'], self.data[variable])
+        plt.plot(self.data['episode'][::50], self.data[variable][::50])
         plt.xlabel('episode')
         plt.ylabel(variable)
         plt.savefig(os.path.join(self.logdir,'{}.png'.format(variable)))

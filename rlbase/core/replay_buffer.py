@@ -12,7 +12,7 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size=None):
         if batch_size is None:
-            return self.memory
+            return self.memory.sample(self.__len__(), axis=0)
         else:
             return self.memory.sample(batch_size, axis=0)
 

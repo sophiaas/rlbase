@@ -1,7 +1,7 @@
 import argparse
 import torch
 from envs import FourRooms
-from agents import A2C
+from agents import A2C, PPO
 
 class BaseConfig(object):
     
@@ -28,7 +28,8 @@ class BaseConfig(object):
 class AlgorithmConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
-        self.gamma = 1.0
+        self.gamma = 0.9
+        self.tau = 0.95
         self.set_attributes(kwargs)
         
 
@@ -41,15 +42,18 @@ class A2CConfig(AlgorithmConfig):
         self.set_attributes(kwargs)
         
 
-class PPOConfig(A2CConfig):
+class PPOConfig(AlgorithmConfig):
 
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'PPO'
+        self.init = PPO
         self.optim_epochs = 5
         self.value_iters = 1
         self.minibatch_size = 50
         self.clip = 0.1
+        self.clip_norm = 40
+        self.l2_reg = 1e-3
         self.anneal_epochs = True
         self.set_attributes(kwargs)
         
@@ -69,6 +73,7 @@ class TrainingConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
         self.optim = None
+        self.weight_decay = 0
         self.lr = 1e-5
         self.lr_scheduler = None
         self.max_episode_length = 100
@@ -96,7 +101,7 @@ class ExperimentConfig(BaseConfig):
         self.log_interval = 10
         self.save_episode_data = False
         self.base_dir = 'experiments/'
-        self.episode_data_dir = 'episode_data'
+#         self.episode_data_dir = 'episodes/'
         self.render = False
         self.resume = ""
         self.eval = False
@@ -165,9 +170,18 @@ class MujocoConfig(EnvConfig):
 class NetworkConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
-        self.head = None
+        self.heads = {}
         self.body = None
         self.set_attributes(kwargs)
+        
+    def init_body(self):
+        return self.body.architecture(self.body)
+    
+    def init_heads(self, body):
+        heads = {}
+        for name, config in self.heads.items():
+            heads[name] = config.architecture(config, body)
+        return heads
     
     
 class ConvLayerConfig(BaseConfig):

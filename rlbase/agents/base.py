@@ -10,6 +10,10 @@ from collections import defaultdict
 # from envs.utils import set_env
 import gym
 
+"""
+Base class for Deep RL agents
+"""
+EPS = np.finfo(np.float32).eps.item()
 
 class BaseAgent(object):
     
@@ -40,6 +44,9 @@ class BaseAgent(object):
     def cuda(self):
         for network in self.model.values():
             network.cuda()
+            
+    def normalize(self, x):
+        return (x - x.mean()) / (x.std() + EPS)
         
     def policy_forward(self, state):
         prediction = self.policy.forward(state)
@@ -48,14 +55,17 @@ class BaseAgent(object):
             max_val, max_idx = torch.max(prediction, 1)
             action_scores = prediction - torch.max(prediction[:, max_idx]) # subtract max logit
             probabilities = torch.exp(action_scores)
-            probabilities = torch.clamp(probabilities, float(np.finfo(np.float32).eps), 1)  # for numerical instabilities
+            probabilities = torch.clamp(probabilities, float(np.finfo(np.float32).eps), 1)  # for numerical instabilities ??
+            if len(probabilities.shape) == 3:
+                probabilities = torch.squeeze(probabilities)
             distribution = Categorical(probabilities)
             
         elif type(self.env.action_space) == gym.spaces.Box:
             return NotImplementedError
         
         else:
-            raise ValueError('env.action_space must be either gym.spaces.Discrete or gym.spaces.Box')
+            raise ValueError('env.action_space must be either gym.spaces.Discrete \
+                             or gym.spaces.Box')
             
         return distribution
     
@@ -66,7 +76,7 @@ class BaseAgent(object):
         return log_prob
     
     def sample_action(self, state):
-        state = self.cuda_if_needed(torch.from_numpy(state).float().unsqueeze(0))
+        state = self.cuda_if_needed(state)
         with torch.no_grad():
             distribution = self.policy_forward(Variable(state))
         action = distribution.sample().data
@@ -89,6 +99,7 @@ class BaseAgent(object):
         state = self.env.reset()
         
         for t in range(self.config.training.max_episode_length):
+            state = torch.from_numpy(state).float().unsqueeze(0)
             step_data = {'state': state}
             action_data = self.sample_action(state)
             state_data = self.env.step(action_data['action'])
@@ -100,16 +111,12 @@ class BaseAgent(object):
             if self.config.experiment.render:
                 self.env.render()
             self.replay_buffer.push(step_data)
-            state = step_data['next_state'] ###or next state?
+            state = step_data['next_state']
             if step_data['done']:
-#                 self.reset()
+#                 self.reset() ??
                 break
         self.update_running_rewards(episode_data['reward'])
         return episode_data
-
-
-    def compute_loss(self):
-        return NotImplementedError
 
     def get_summary(self):
         summary = {
@@ -128,27 +135,9 @@ class BaseAgent(object):
             self.running_moves = episode_moves
             
         else:
-            self.running_rewards = self.running_rewards * 0.99 + total_episode_rewards * 0.01
+            self.running_rewards = self.running_rewards * 0.99 \
+                                        + total_episode_rewards * 0.01
             self.running_moves = self.running_moves * 0.99 + episode_moves * 0.01
-
-    def improve(self):
-        batch = self.replay_buffer.sample()
-        
-        for sched in self.lr_scheduler:
-            sched.step()
-        
-        for opt in self.optimizer.values():
-            opt.zero_grad()
-        
-        losses = self.compute_loss(batch)
-        
-        for loss in losses:
-            loss.backward()
-        
-        for opt in self.optimizer.values():
-            opt.step()
-            
-        self.replay_buffer.clear()
 
     def train(self):
         #TODO: ADD HANDLE RESUME
@@ -185,5 +174,10 @@ class BaseAgent(object):
             self.episode += 1
             
         print('Training complete')
+        
+    def evaluate(self):
+        return NotImplementedError
             
+    def improve(self):
+        return NotImplementedError
         
