@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-# from torch.optim.lr_scheduler import StepLR
+import numpy as np
 from .base import BaseAgent
 
 """
@@ -51,27 +51,44 @@ class A2C(BaseAgent):
         self.config.network.heads['policy'].outdim = self.env.action_space.n
         self.config.network.heads['value'].outdim = 1
         
-    def compute_returns(self, rewards, masks):
-        prev_return = 0
-        returns = [] # list to save empirical values
-
-        # calculate the discounted empirical value using 
-        # rewards returned from the environment
-        for i, r in enumerate(reversed(rewards)):
-            prev_return = r + self.config.algorithm.gamma * prev_return * masks[i]
-            returns.insert(0, prev_return)
-            
-        return self.normalize(returns)
-
     def unpack_batch(self, batch):
-        # convert pandas series to list 
-        # TODO: don't use pandas
-        log_probs = batch.log_prob.tolist()
-        rewards = batch.reward.tolist()
-        values = batch.value.tolist()
-        # convert "done" to mask ("not done")
-        masks = list(1.0 - batch.done.to_numpy())
+        log_probs = self.cuda_if_needed(torch.stack(batch.log_prob.tolist()))
+        rewards = self.cuda_if_needed(torch.from_numpy(batch.reward.to_numpy()))
+        values = self.cuda_if_needed(torch.stack(batch.value.tolist()))
+        masks = self.cuda_if_needed(torch.from_numpy(1.0 - batch.done.to_numpy()))
         return log_probs, rewards, values, masks
+        
+    def estimate_advantages(self, rewards, masks, values):
+        # for brevity
+        gamma = self.config.algorithm.gamma
+        tau = self.config.algorithm.gamma
+        
+        tensor_type = type(masks)
+        tensor_shape = values.shape
+        
+        # initialize tensors
+        returns = tensor_type(tensor_shape)
+        deltas = tensor_type(tensor_shape)
+        advantages = tensor_type(tensor_shape)
+        
+        prev_return = 0
+        prev_value = 0
+        prev_advantage = 0
+        
+        # calculate discounted returns and advantages
+        for i in reversed(range(len(rewards))):
+            returns[i] = rewards[i] + gamma * prev_return * masks[i]
+            deltas[i] = rewards[i] + gamma * prev_value * masks[i] - values[i]
+            advantages[i] = deltas[i] + gamma * tau * prev_advantage * masks[i]
+
+            prev_return = returns[i, 0]
+            prev_value = values[i, 0]
+            prev_advantage = advantages[i, 0]
+            
+        advantages = self.normalize(advantages)
+        returns = self.normalize(returns)
+                                    
+        return advantages, returns
 
     def improve(self):
         # sample a random batch of episodes from replay buffer
@@ -86,50 +103,42 @@ class A2C(BaseAgent):
             opt.zero_grad()
         
         # update parameters using computed loss
-        losses = self.compute_loss(batch)
+        self.update_parameters(batch)
+            
+        # empty the replay buffer
+        self.replay_buffer.clear()
+        
+    def update_parameters(self, batch):
+        log_probs, rewards, values, masks = self.unpack_batch(batch)
+            
+        policy_losses = [] # list to save policy (actor) loss
+        value_losses = [] # list to save value (critic) loss
+              
+        advantages, returns = self.estimate_advantages(rewards, masks, values)
+        
+        for log_prob, value, advantage, r in zip(log_probs, values, advantages, returns):
+            #Make sure no issues with turning into vars and cuda
+            advantage = self.cuda_if_needed(Variable(advantage))
+            r = self.cuda_if_needed(Variable(r))
+            
+            # calculate policy (actor) loss
+            policy_losses.append(torch.sum(-log_prob * advantage)) #var advantage
+            
+            # make sure no issue w change
+            target = r.clone()
+            
+            # calculate value (critic) loss using L1 smooth loss
+            value_losses.append(F.smooth_l1_loss(value, target))
+        
+        # take mean of the losses
+        policy_loss = torch.stack(policy_losses).mean()
+        value_loss = torch.stack(value_losses).mean()   
+        
+        losses = [policy_loss, value_loss]
         
         for loss in losses:
             loss.backward()
         
         for opt in self.optimizer.values():
             opt.step()
-            
-        # empty the replay buffer
-        self.replay_buffer.clear()
         
-    def compute_loss(self, batch):
-        log_probs, rewards, values, masks = self.unpack_batch(batch)
-            
-        policy_losses = [] # list to save policy (actor) loss
-        value_losses = [] # list to save value (critic) loss
-              
-        returns = self.compute_returns(rewards, masks)
-        
-        for log_prob, value, r in zip(log_probs, values, returns):
-            advantage = r - value.data
-            
-            # calculate policy (actor) loss
-            policy_losses.append(torch.sum(-log_prob * Variable(advantage)))
-            
-#             rr = torch.Tensor([r]).repeat(value.size())
-            target = self.cuda_if_needed(Variable(torch.Tensor([r])))
-            
-            # calculate value (critic) loss using L1 smooth loss
-            value_losses.append(F.smooth_l1_loss(value, target))
-#             value_losses.append(F.smooth_l1_loss(value, target))
-        
-        # take mean of the losses 
-        # ALTERNATIVE: sum
-        policy_loss = torch.stack(policy_losses).mean()
-        value_loss = torch.stack(value_losses).mean()   
-        
-        loss = [policy_loss, value_loss]
-        
-        return loss
-
-#         for log_prob, value, r in zip(log_probs, values, returns):
-#             reward = r - value.data #[0, 0]  # this also is an issue
-#             rr = torch.Tensor([r]).repeat(value.size())  # copies, not merely pointers
-#             policy_losses.append(torch.sum(-log_prob * Variable(reward)))
-#             target = cuda_if_needed(Variable(rr), self.config)  # basically need r to be [1, num_indices] = [1, shape(value)]
-#             value_losses.append(F.smooth_l1_loss(value, target))

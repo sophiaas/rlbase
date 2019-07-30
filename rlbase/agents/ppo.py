@@ -13,38 +13,6 @@ class PPO(A2C):
     
     def __init__(self, config):
         super(PPO, self).__init__(config)
-
-    def estimate_advantages(self, rewards, masks, values):
-        # for brevity
-        gamma = self.config.algorithm.gamma
-        tau = self.config.algorithm.gamma
-        
-        tensor_type = type(masks)
-        tensor_shape = values.shape
-        
-        # initialize tensors
-        returns = tensor_type(tensor_shape)
-        deltas = tensor_type(tensor_shape)
-        advantages = tensor_type(tensor_shape)
-        
-        prev_return = 0
-        prev_value = 0
-        prev_advantage = 0
-        
-        # calculate discounted returns and advantages
-        for i in reversed(range(len(rewards))):
-            returns[i] = rewards[i] + gamma * prev_return * masks[i]
-            deltas[i] = rewards[i] + gamma * prev_value * masks[i] - values[i]
-            advantages[i] = deltas[i] + gamma * tau * prev_advantage * masks[i]
-
-            prev_return = returns[i, 0]
-            prev_value = values[i, 0]
-            prev_advantage = advantages[i, 0]
-            
-        advantages = self.normalize(advantages)
-        returns = self.normalize(returns) # OPTIONAL??
-                                    
-        return advantages, returns
     
     def unpack_batch(self, batch):
         # convert to tensors
