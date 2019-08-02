@@ -1,1 +1,1 @@
-from .env import LightBot
+from .env import Lightbot
