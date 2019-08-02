@@ -6,18 +6,18 @@ from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_test_fourrooms',
+    {'name': 'a2c_test_fourrooms',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
     }
 )
 
-# algorithm = A2CConfig(
-#     {'gamma': 0.9
-#     }
-# )
-algorithm = PPOConfig()
+algorithm = A2CConfig(
+    {'gamma': 0.9
+    }
+)
+# algorithm = PPOConfig()
 
 training = TrainingConfig(
     {'max_episode_length': 100,

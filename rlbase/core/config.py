@@ -1,6 +1,6 @@
 import argparse
 import torch
-from envs import FourRooms
+from envs import FourRooms, Lightbot
 from agents import A2C, PPO
 
 class BaseConfig(object):
@@ -81,6 +81,7 @@ class TrainingConfig(BaseConfig):
         self.update_every = 100
         self.lr_gamma = 0.9
         self.cuda = True
+        self.device = 0
         self.set_attributes(kwargs)
         
 
@@ -101,12 +102,12 @@ class ExperimentConfig(BaseConfig):
         self.log_interval = 10
         self.save_episode_data = False
         self.base_dir = 'experiments/'
-#         self.episode_data_dir = 'episodes/'
         self.render = False
         self.resume = ""
         self.eval = False
         self.adapt = False
-        self.debug = False
+        self.debug = False 
+        self.plot_granularity = 50 # place datapoints every n episodes
         self.set_attributes(kwargs)
         
         
@@ -126,12 +127,28 @@ class LightbotConfig(EnvConfig):
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'lightbot'
-        self.init = None #ENV
-        self.reward_fn = ""
-        self.puzzle_name = ""
+        self.init = Lightbot
+        self.reward_fn = "1,1,-1,-1"
+        self.puzzle_name = "cross"
+        self.set_attributes(kwargs)
+        
+    def init_env(self):
+        return self.init(self)
+        
+class LightbotMinigridConfig(EnvConfig):
+    
+    def __init__(self, kwargs=None):
+        super().__init__()
+        self.name = 'lightbot'
+        self.init = Lightbot
+        self.reward_fn = "10,10,-1,-1"
+        self.puzzle_name = "cross"
         self.agent_view_size = 0
         self.toggle_ontop = True
         self.set_attributes(kwargs)
+        
+    def init_env(self):
+        return self.init(self)
         
 
 class HanoiConfig(EnvConfig):
@@ -145,6 +162,9 @@ class HanoiConfig(EnvConfig):
         self.initial_peg = None
         self.set_attributes(kwargs)
         
+    def init_env(self):
+        return self.init(self)
+        
         
 class FourRoomsConfig(EnvConfig):
 
@@ -154,6 +174,9 @@ class FourRoomsConfig(EnvConfig):
         self.init = FourRooms #ENV
         self.size = 20
         self.set_attributes(kwargs)
+        
+    def init_env(self):
+        self.init()
         
 
 class MujocoConfig(EnvConfig):
