@@ -21,12 +21,6 @@ class Logger(object):
         self.episode_data_saved = False
         self.episode = 0
         
-#         #overwrites existing data
-#         if os.path.exists(self.logdir+'episode_data.csv'):
-#             os.remove(self.logdir+'episode_data.csv')            
-#         if os.path.exists(self.logdir+'data.csv'):
-#             os.remove(self.logdir+'summary.csv')
-        
         if self.config.experiment.resume:
             assert os.path.exists(self.logdir)
         else:
@@ -41,15 +35,13 @@ class Logger(object):
             if not os.path.exists(self.logdir):
                 os.makedirs(self.logdir)
                 os.makedirs(self.checkpointdir)
-#                 if self.config.experiment.save_episode_data:
-                os.makedirs(self.episodedir)
-                print('EPISODE DIR: {}'.format(self.episodedir))
+                if self.config.experiment.save_episode_data:
+                    os.makedirs(self.episodedir)
         else:
             os.makedirs(self.logdir)
             os.makedirs(self.checkpointdir)
-#             if self.config.experiment.save_episode_data:
-            os.makedirs(self.episodedir)
-            print('EPISODE DIR: {}'.format(self.episodedir))
+            if self.config.experiment.save_episode_data:
+                os.makedirs(self.episodedir)
         
     def save_config(self):
         with open(self.logdir + 'config.p', 'wb') as f:
@@ -69,11 +61,6 @@ class Logger(object):
 
     def save(self):
         self.data.to_pickle(self.logdir+'summary.p')
-#         with open(self.logdir+'summary.csv', 'a') as f:
-#             if self.data_saved:
-#                 self.data.to_csv(f, header=False, index=False)
-#             else:
-#                 self.data.to_csv(f, header=True, index=False)
 
     def load(self, name):
         self.data = pd.read_csv(self.logdir+'summary.p')
@@ -82,11 +69,7 @@ class Logger(object):
         self.episode_data.to_pickle(self.episodedir
                                     +'episode_data_{}.p'.format(self.episode))
         self.episode_data.drop(self.episode_data.index, inplace=True)
-#         with open(self.logdir+'episode_data.csv', 'a') as f:
-#             if self.episode_data_saved:
-#                 self.episode_data.to_csv(f, header=False, index=False)
-#             else:
-#                 self.episode_data.to_csv(f, header=True, index=False)
+
         
     def save_checkpoint(self, agent):
         filename = self.checkpointdir+'episode_{}'.format(agent.episode)
@@ -95,17 +78,13 @@ class Logger(object):
         checkpoint = {'model': model, 'optimizer': optimizer}
         torch.save(checkpoint, filename)
         
-#     def load_checkpoint(self, filename, checkpoint):
+    # TODO: load_checkpoint()
+        
     def plot(self, variable):
-        plt.plot(self.data['episode'][::50], self.data[variable][::50])
+        every_n = self.config.experiment.plot_granularity
+        plt.plot(self.data['episode'][::every_n], self.data[variable][::every_n])
         plt.xlabel('episode')
         plt.ylabel(variable)
         plt.savefig(os.path.join(self.logdir,'{}.png'.format(variable)))
         plt.clf()
-        
-#     def plot(self, var1, var2, name):
-#         plt.plot(self.data[var1], self.data[var2])
-#         plt.xlabel(var1)
-#         plt.ylabel(var2)
-#         plt.savefig(os.path.join(self.logdir,'{}.png'.format(name)))
-#         plt.clf()
+
