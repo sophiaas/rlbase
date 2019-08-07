@@ -1,11 +1,24 @@
 maps = {
+#   "debug1": {
+#     "direction":0,
+#     "position": {"x": 0, "y": 3},
+#     "map":
+#       [[{'h': 0, 't': 'b'}],
+#        [{'h': 0, 't': 'l'}],
+#        [{'h': 1, 't': 'l'}],
+#        [{'h': 0, 't': 'l'}],
+#       ]
+#   # optimal number of steps: 6 steps
+#   # optimal reward: 0
+#   # [[' 0* ' ' 1* ' ' 0* ' '<0  ']]
+#   },
   "debug1": {
     "direction":0,
     "position": {"x": 0, "y": 3},
     "map":
       [[{'h': 0, 't': 'b'}],
-       [{'h': 0, 't': 'l'}],
-       [{'h': 1, 't': 'l'}],
+       [{'h': 0, 't': 'b'}],
+       [{'h': 0, 't': 'b'}],
        [{'h': 0, 't': 'l'}],
       ]
   # optimal number of steps: 6 steps

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 from torch.distributions import Categorical
 from core.replay_buffer import ReplayBuffer
 from core.logger import Logger
@@ -15,13 +14,14 @@ Base class for Deep RL agents
 """
 EPS = np.finfo(np.float32).eps.item()
 
+
+
 class BaseAgent(object):
     
     def __init__(self, config):
         self.config = config
-        self.env = self.config.env.init()
-#         self.config.env.action_dim = self.env.action_space.n #FIX THIS
-#         self.config.env.obs_dim = self.env.observation_space.n # FIX THIS
+        self.env = self.config.env.init_env()
+        print('env: {}'.format(self.env))
         self.replay_buffer = ReplayBuffer(config)
         self.logger = Logger(config)
         self.model = None
@@ -29,24 +29,38 @@ class BaseAgent(object):
         self.episode = 0
         self.running_rewards = None
         self.running_moves = None
+        if self.config.training.cuda:
+            torch.cuda.set_device(self.config.training.device)
+            torch.set_default_tensor_type(torch.cuda.FloatTensor)
+        else:
+            torch.set_default_tensor_type(torch.FloatTensor)
         
     def reset(self):
         self.episode = 0
         self.replay_buffer.clear()
         self.env.reset()
     
-    def cuda_if_needed(self, x):
+    def if_cuda(self, x):
         if self.config.training.cuda:
             return x.cuda()
         else:
             return x
+
+#     def tensor(self, x):
+#         if isinstance(x, torch.Tensor):
+#             return x
+#         x = np.asarray(x, dtype=np.float)
+#         x = torch.as_tensor(x)
+#         x = torch.tensor(x, device=self.config.training.device, dtype=torch.float32, requires_grad=True)
+#         return x
     
     def cuda(self):
         for network in self.model.values():
             network.cuda()
             
     def normalize(self, x):
-        return (x - x.mean()) / (x.std() + EPS)
+        return (x - np.mean(x)) / (np.std(x) + EPS)
+#         return (x - x.mean()) / (x.std() + EPS)
         
     def policy_forward(self, state):
         prediction = self.policy.forward(state)
@@ -76,13 +90,20 @@ class BaseAgent(object):
         return log_prob
     
     def sample_action(self, state):
-        state = self.cuda_if_needed(state)
+#         state = self.if_cuda(state)
         with torch.no_grad():
-            distribution = self.policy_forward(Variable(state))
+            distribution = self.policy_forward(state)
+        
         action = distribution.sample().data
-        log_prob = self.log_prob(Variable(state), Variable(action))  # not volatile
-        value = self.value_net(Variable(state))  # not volatile
+        log_prob = self.log_prob(state, action)  # not volatile
+        value = self.value_net(state)  # not volatile
         return {'action': action[0], 'log_prob': log_prob, 'value': value}
+    
+    def to_cpu(self, x):
+        if type(x) == torch.Tensor:
+            return x.data.cpu().tolist()
+        else:
+            return x
 
     def convert_data(self, x):
         if type(x) == torch.Tensor:
@@ -99,7 +120,8 @@ class BaseAgent(object):
         state = self.env.reset()
         
         for t in range(self.config.training.max_episode_length):
-            state = torch.from_numpy(state).float().unsqueeze(0)
+#             state = torch.from_numpy(np.expand_dims(state, 0))
+            state = torch.as_tensor(np.expand_dims(state, 0)).float()
             step_data = {'state': state}
             action_data = self.sample_action(state)
             state_data = self.env.step(action_data['action'])
@@ -110,6 +132,7 @@ class BaseAgent(object):
                     episode_data[key].append(self.convert_data(val))
             if self.config.experiment.render:
                 self.env.render()
+#             print('STEP DATA: {}'.format(step_data))
             self.replay_buffer.push(step_data)
             state = step_data['next_state']
             if step_data['done']:
@@ -168,7 +191,7 @@ class BaseAgent(object):
                 self.logger.plot('running_moves')
                 
             if self.episode % self.config.training.update_every == 0 and self.episode > 0:
-                #TODO: ADD PPO OPTIM EPOCHS??
+                print('updating weights...')
                 self.improve()
                 
             self.episode += 1

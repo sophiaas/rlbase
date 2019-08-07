@@ -8,19 +8,30 @@ from .a2c import A2C
 """
 Advantage Actor-Critic (A2C) with Proximal Policy Optimization
 """
+DEVICE=1
 
 class PPO(A2C):
     
     def __init__(self, config):
         super(PPO, self).__init__(config)
     
+#     def unpack_batch(self, batch):
+#         # convert to tensors
+#         states = self.if_cuda(torch.stack(batch.state.tolist()))
+#         actions = self.if_cuda(torch.stack(batch.action.to_list()))
+#         rewards = self.if_cuda(torch.from_numpy(batch.reward.to_numpy()))
+#         masks = self.if_cuda(torch.from_numpy(1.0 - batch.done.to_numpy()))
+#         return states, actions, rewards, masks
+    
     def unpack_batch(self, batch):
         # convert to tensors
-        states = self.cuda_if_needed(torch.stack(batch.state.tolist()))
-        actions = self.cuda_if_needed(torch.stack(batch.action.to_list()))
-        rewards = self.cuda_if_needed(torch.from_numpy(batch.reward.to_numpy()))
-        masks = self.cuda_if_needed(torch.from_numpy(1.0 - batch.done.to_numpy()))
-        return states, actions, rewards, masks
+        states = torch.stack(batch.state.tolist()).to(DEVICE).detach()
+        actions = torch.stack(batch.action.to_list()).to(DEVICE).detach()
+#         rewards = torch.from_numpy(batch.reward.to_numpy()).to(DEVICE)
+        rewards = batch.reward.tolist()
+        log_probs = torch.stack(batch.log_prob.to_list()).to(DEVICE).detach()
+        masks = list(1.0 - batch.done.to_numpy())
+        return states, actions, rewards, masks, log_probs
 
     def policy_step(self, states, actions, returns, advantages, fixed_log_prob):
         # get advantages and log probs
@@ -28,7 +39,7 @@ class PPO(A2C):
         log_prob = self.log_prob(states, actions) #var both
         
         # compute policy loss
-        ratio = torch.exp(log_prob - fixed_log_prob) #var fixed log prob
+        ratio = torch.exp(log_prob - fixed_log_prob.detach()) #var fixed log prob
         surr1 = ratio * advantages_var
         surr2 = torch.clamp(ratio, 1.0 - self.config.algorithm.clip, 1.0 
                             + self.config.algorithm.clip) * advantages_var
@@ -67,13 +78,19 @@ class PPO(A2C):
         minibatch_size = self.config.algorithm.minibatch_size
         optim_epochs = self.config.algorithm.optim_epochs
         
-        states, actions, rewards, masks = self.unpack_batch(batch)
+        states, actions, rewards, masks, fixed_log_prob = self.unpack_batch(batch)
         
         with torch.no_grad():
-            values = self.value_net(states).data #var
-            fixed_log_prob = self.log_prob(states, actions).data #var actions
+            values = self.value_net(states) #var
+            values = torch.squeeze(values).to(DEVICE)
+#             fixed_log_prob = self.log_prob(states, actions).data #var actions
+
+        returns = self.compute_returns(rewards, masks)
+        returns = torch.tensor(returns).float().to(DEVICE)
             
-        advantages, returns = self.estimate_advantages(rewards, masks, values)
+        advantages = returns - values.detach()
+#         advantages, returns = self.estimate_advantages(rewards, masks, values.detach())
+#         advantages = advantages.to(DEVICE)
         
         optim_iter_num = int(np.ceil(states.shape[0] 
                                      / float(minibatch_size))) #??
@@ -84,11 +101,16 @@ class PPO(A2C):
             perm = np.random.permutation(range(states.shape[0]))
             
             # MAKE SURE NOTHING WEIRD HAPPENS WITH VARIABLES AND CUDA
-            states = Variable(self.cuda_if_needed(states[perm]))
-            actions = Variable(self.cuda_if_needed(actions[perm]))
-            returns = Variable(self.cuda_if_needed(returns[perm]))
-            advantages = Variable(self.cuda_if_needed(advantages[perm]))
-            fixed_log_prob = Variable(self.cuda_if_needed(fixed_log_prob[perm]))
+#             states = self.if_cuda(states[perm])
+#             actions = self.if_cuda(actions[perm])
+#             returns = self.if_cuda(returns[perm])
+#             advantages = self.if_cuda(advantages[perm])
+#             fixed_log_prob = self.if_cuda(fixed_log_prob[perm])
+            states = states[perm]
+            actions = actions[perm]
+            returns = returns[perm]
+            advantages = advantages[perm]
+            fixed_log_prob = fixed_log_prob[perm]
 
             # iterate through minibatchs
             for j in range(optim_iter_num):

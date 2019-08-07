@@ -99,7 +99,7 @@ class ExperimentConfig(BaseConfig):
      def __init__(self, kwargs=None):
         self.name = ""
         self.seed = 543
-        self.log_interval = 10
+        self.log_interval = 100
         self.save_episode_data = False
         self.base_dir = 'experiments/'
         self.render = False
@@ -128,8 +128,8 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "1,1,-1,-1"
-        self.puzzle_name = "cross"
+        self.reward_fn = "10,01,-1,-1"
+        self.puzzle_name = "debug1"
         self.set_attributes(kwargs)
         
     def init_env(self):

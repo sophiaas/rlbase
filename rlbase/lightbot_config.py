@@ -6,20 +6,20 @@ from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot',
+    {'name': 'ppo_lightbot_v2',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
     }
 )
 
-algorithm = A2CConfig()
+algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 150,
+    {'max_episode_length': 50,
      'max_episodes': 20000,
      'weight_decay': 0.9,
-     'update_every': 10,
+     'update_every': 100,
      'lr_scheduler': StepLR,
      'lr': 1e-5,
      'optim': Adam,

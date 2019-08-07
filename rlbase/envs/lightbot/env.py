@@ -135,7 +135,8 @@ class Lightbot(gym.Env):
         transition = {'next_state': copy.deepcopy(self.state), 
                       'reward': copy.deepcopy(self.reward), 
                       'done': copy.deepcopy(self.done)}
-        return transition
+#         return transition
+        return copy.deepcopy(self.state), copy.deepcopy(self.reward), copy.deepcopy(self.done), {}
 
     def make_move(self, state, action):
         state = copy.deepcopy(state)
