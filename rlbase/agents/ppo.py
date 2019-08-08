@@ -3,133 +3,205 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import numpy as np
-from .a2c import A2C
+from .base import BaseAgent
+import torch
+import torch.nn as nn
+from torch.distributions import Categorical
+import gym
+from networks.actor_critic import ActorCritic
+from core.replay_buffer import Memory
 
-"""
-Advantage Actor-Critic (A2C) with Proximal Policy Optimization
-"""
-DEVICE=1
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
-class PPO(A2C):
+# """
+# Advantage Actor-Critic Proximal Policy Optimization
+# """
+
+# class PPO(BaseAgent):
+    
+#     def __init__(self, config):
+#         super(PPO, self).__init__(config)
+#         self.policy = ActorCritic(config.network).to(device)
+#         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=config.training.lr, 
+#                                           betas=config.training.betas)
+#         self.policy_old = ActorCritic(config.network).to(device)
+#         self.MseLoss = nn.MSELoss()
+#         self.timestep = 0
+        
+# #     def sample_episode(self):
+# #         state = self.env.reset()
+# #         episode_rewards = []
+# #         for t in range(self.config.training.max_episode_length):
+# #             self.timestep += 1
+            
+# #             # Running policy_old:
+# #             action = self.policy_old.act(state, self.memory)
+# #             state, reward, done, _ = self.env.step(action)
+# #             # Saving reward:
+# #             self.memory.rewards.append(reward)
+# #             episode_rewards.append(reward)
+
+# #             # update if its time
+# #             if self.timestep > 0 and self.timestep % self.config.training.update_every == 0:
+# # #                 print('mem: {}'.format(self.memory.rewards))
+# # #                 print('UPDATING')
+# # #                 print('timestep: {}'.format(self.timestep))
+# # #                 self.update(self.memory)
+# #                 self.update()
+
+# #                 self.memory.clear_memory()
+# #                 self.timestep = 0
+                
+# # #             running_reward += reward
+# #             if self.config.experiment.render:
+# #                 self.env.render()
+# #             if done:
+# #                 break
+# #         self.update_running_rewards(episode_rewards)
+# #         self.update_average_rewards(episode_rewards)
+        
+        
+    
+#     def update(self, memory):
+#         # Monte Carlo estimate of state rewards:
+#         rewards = []
+#         discounted_reward = 0
+#         for reward in reversed(memory.rewards):
+#             discounted_reward = reward + (self.config.algorithm.gamma * discounted_reward)
+#             rewards.insert(0, discounted_reward)
+        
+#         # Normalizing the rewards:
+#         rewards = torch.tensor(rewards).to(device)
+#         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+        
+#         # convert list to tensor
+#         old_states = torch.stack(memory.states).to(device).detach()
+#         old_actions = torch.stack(memory.actions).to(device).detach()
+#         old_logprobs = torch.stack(memory.logprobs).to(device).detach()
+        
+#         # Optimize policy for K epochs:
+#         for _ in range(self.config.algorithm.optim_epochs):
+#             # Evaluating old actions and values :
+#             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
+            
+#             # Finding the ratio (pi_theta / pi_theta__old):
+#             ratios = torch.exp(logprobs - old_logprobs.detach())
+                
+#             # Finding Surrogate Loss:
+#             advantages = rewards - state_values.detach()
+#             surr1 = ratios * advantages
+#             surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) * advantages
+#             loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(state_values, rewards) - 0.01*dist_entropy
+            
+#             # take gradient step
+#             self.optimizer.zero_grad()
+#             loss.mean().backward()
+#             self.optimizer.step()
+            
+#     def train(self):
+#         running_reward = 0
+#         avg_length = 0
+#         timestep = 0
+#         memory = Memory()
+#         # training loop
+#         for i_episode in range(1, self.config.training.max_episodes+1):
+#             state = self.env.reset()
+#             for t in range(self.config.training.max_episode_length):
+#                 timestep += 1
+
+#                 # Running policy_old:
+#                 action = self.policy_old.act(state, memory)
+#                 state, reward, done, _ = self.env.step(action)
+#                 # Saving reward:
+#                 memory.rewards.append(reward)
+
+#                 # update if its time
+#                 if timestep % self.config.training.update_every == 0:
+#                     self.update(memory)
+#                     memory.clear_memory()
+#                     timestep = 0
+
+#                 running_reward += reward
+# #                 if render:
+# #                     self.env.render()
+#                 if done:
+#                     break
+
+#             avg_length += t
+
+# #             # stop training if avg_reward > solved_reward
+# #             if running_reward > (log_interval*solved_reward):
+# #                 print("########## Solved! ##########")
+# #                 torch.save(self.policy.state_dict(), './PPO_{}.pth'.format(env_name))
+# #                 break
+
+#             # logging
+#             if i_episode % self.config.experiment.log_interval == 0:
+#                 avg_length = int(avg_length/self.config.experiment.log_interval)
+#                 running_reward = int((running_reward/self.config.experiment.log_interval))
+
+#                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
+#                 running_reward = 0
+#                 avg_length = 0
+
+
+class PPO(object):
     
     def __init__(self, config):
-        super(PPO, self).__init__(config)
-    
-#     def unpack_batch(self, batch):
-#         # convert to tensors
-#         states = self.if_cuda(torch.stack(batch.state.tolist()))
-#         actions = self.if_cuda(torch.stack(batch.action.to_list()))
-#         rewards = self.if_cuda(torch.from_numpy(batch.reward.to_numpy()))
-#         masks = self.if_cuda(torch.from_numpy(1.0 - batch.done.to_numpy()))
-#         return states, actions, rewards, masks
-    
-    def unpack_batch(self, batch):
-        # convert to tensors
-        states = torch.stack(batch.state.tolist()).to(DEVICE).detach()
-        actions = torch.stack(batch.action.to_list()).to(DEVICE).detach()
-#         rewards = torch.from_numpy(batch.reward.to_numpy()).to(DEVICE)
-        rewards = batch.reward.tolist()
-        log_probs = torch.stack(batch.log_prob.to_list()).to(DEVICE).detach()
-        masks = list(1.0 - batch.done.to_numpy())
-        return states, actions, rewards, masks, log_probs
+        self.config = config
 
-    def policy_step(self, states, actions, returns, advantages, fixed_log_prob):
-        # get advantages and log probs
-        advantages_var = advantages.view(-1) #var cuda
-        log_prob = self.log_prob(states, actions) #var both
+        self.config.network.in_dim = config.env.state_dim
+        self.config.network.out_dim = config.env.action_dim
+        self.config.network.device = device
         
-        # compute policy loss
-        ratio = torch.exp(log_prob - fixed_log_prob.detach()) #var fixed log prob
-        surr1 = ratio * advantages_var
-        surr2 = torch.clamp(ratio, 1.0 - self.config.algorithm.clip, 1.0 
-                            + self.config.algorithm.clip) * advantages_var
-        policy_loss = - torch.min(surr1, surr2).mean()
-                                    
-        # backprop
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-                                    
-        # clip gradients
-        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), 
-                                       self.config.algorithm.clip_norm)
-        self.policy_optimizer.step()
-    
-    def value_step(self, states, returns):
-        # empirical values
-#         value_target = returns.clone() #var, cuda, no clone
-                                    
-        # optimize value net predictions
-        for i in range(self.config.algorithm.value_iters):
-            value_prediction = self.value_net(states) #var
-            value_loss = (value_prediction - returns).pow(2).mean() #value_target
-                                    
-            # backprop
-            self.value_optimizer.zero_grad()
-            value_loss.backward()
-            self.value_optimizer.step()
-    
-    def improve(self):
-        batch = self.replay_buffer.sample()
-        self.update_parameters(batch)
-        self.replay_buffer.clear()
-    
-    def update_parameters(self, batch):
-        # for brevity
-        minibatch_size = self.config.algorithm.minibatch_size
-        optim_epochs = self.config.algorithm.optim_epochs
-        
-        states, actions, rewards, masks, fixed_log_prob = self.unpack_batch(batch)
-        
-        with torch.no_grad():
-            values = self.value_net(states) #var
-            values = torch.squeeze(values).to(DEVICE)
-#             fixed_log_prob = self.log_prob(states, actions).data #var actions
+        self.policy = ActorCritic(config.network).to(device)
 
-        returns = self.compute_returns(rewards, masks)
-        returns = torch.tensor(returns).float().to(DEVICE)
+        self.optimizer = torch.optim.Adam(self.policy.parameters(),
+                                          lr=self.config.training.lr, 
+                                          betas=self.config.training.betas)
+
+        self.policy_old = ActorCritic(config.network).to(device)
+        
+        self.MseLoss = nn.MSELoss()
+    
+    def update(self, memory):   
+        # Monte Carlo estimate of state rewards:
+        rewards = []
+        discounted_reward = 0
+        for reward in reversed(memory.rewards):
+            discounted_reward = reward + (self.config.algorithm.gamma * discounted_reward)
+            rewards.insert(0, discounted_reward)
+        
+        # Normalizing the rewards:
+        rewards = torch.tensor(rewards).to(device)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+        
+        # convert list to tensor
+        old_states = torch.stack(memory.states).to(device).detach()
+        old_actions = torch.stack(memory.actions).to(device).detach()
+        old_logprobs = torch.stack(memory.logprobs).to(device).detach()
+        
+        # Optimize policy for K epochs:
+        for _ in range(self.config.algorithm.optim_epochs):
+            # Evaluating old actions and values :
+            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
             
-        advantages = returns - values.detach()
-#         advantages, returns = self.estimate_advantages(rewards, masks, values.detach())
-#         advantages = advantages.to(DEVICE)
-        
-        optim_iter_num = int(np.ceil(states.shape[0] 
-                                     / float(minibatch_size))) #??
-        
-        # POSSIBLE FEATURE: ANNEAL EPOCHS
-
-        for i in range(int(optim_epochs)):
-            perm = np.random.permutation(range(states.shape[0]))
+            # Finding the ratio (pi_theta / pi_theta__old):
+            ratios = torch.exp(logprobs - old_logprobs.detach())
+                
+            # Finding Surrogate Loss:
+            advantages = rewards - state_values.detach()
+            surr1 = ratios * advantages
+            surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \ 
+                                * advantages
+            loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(state_values, rewards) - 0.01 \
+                                * dist_entropy
             
-            # MAKE SURE NOTHING WEIRD HAPPENS WITH VARIABLES AND CUDA
-#             states = self.if_cuda(states[perm])
-#             actions = self.if_cuda(actions[perm])
-#             returns = self.if_cuda(returns[perm])
-#             advantages = self.if_cuda(advantages[perm])
-#             fixed_log_prob = self.if_cuda(fixed_log_prob[perm])
-            states = states[perm]
-            actions = actions[perm]
-            returns = returns[perm]
-            advantages = advantages[perm]
-            fixed_log_prob = fixed_log_prob[perm]
-
-            # iterate through minibatchs
-            for j in range(optim_iter_num):
-                # get minibatch
-                idx = slice(j * minibatch_size, min((j+1)*minibatch_size, 
-                                                    states.shape[0]))
-                states_batch = states[idx]
-                actions_batch = actions[idx]
-                advantages_batch = advantages[idx]
-                returns_batch = returns[idx]
-                fixed_log_prob_batch = fixed_log_prob[idx]
-
-                # anneal learning rate
-                for sched in self.lr_scheduler:
-                    sched.step()
-                    # POSSIBLE FEATURE: ANNEAL ALGORITHM.CLIP BY LR_GAMMA
-
-                # update value network and policy network
-                self.value_step(states_batch, returns_batch)
-                self.policy_step(states_batch, actions_batch, returns_batch, 
-                              advantages_batch, fixed_log_prob_batch)
+            # take gradient step
+            self.optimizer.zero_grad()
+            loss.mean().backward()
+            self.optimizer.step()
+        
+        # Copy new weights into old policy:
+        self.policy_old.load_state_dict(self.policy.state_dict())
 

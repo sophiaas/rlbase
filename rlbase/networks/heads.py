@@ -12,9 +12,30 @@ class BaseHead(nn.Module):
         self.outdim = config.outdim
         self.nlayers = config.nlayers
         self.activation = config.activation
+        self.out_activation = config.out_activation
     
     def define_network(self):
         return NotImplementedError
+    
+
+# class FullyConnectedHead(BaseHead):
+    
+#     def __init__(self, config, body):
+#         super(FullyConnectedHead, self).__init__(config)
+#         self.define_network()
+#         self.body = body
+        
+#     def define_network(self):
+#         self.network = nn.ModuleList([])
+#         for i in range(self.nlayers-1):
+#             self.network.append(nn.Linear(self.hdim, self.hdim))
+#         self.network.append(nn.Linear(self.hdim, self.outdim))
+            
+#     def forward(self, x):
+#         x = self.body.forward(x)
+#         for layer in self.network:
+#             x = self.activation(layer(x))
+#         return x
     
 
 class FullyConnectedHead(BaseHead):
@@ -31,9 +52,10 @@ class FullyConnectedHead(BaseHead):
         self.network.append(nn.Linear(self.hdim, self.outdim))
             
     def forward(self, x):
-        x = self.body.forward(x)
-        for layer in self.network:
+        x = self.body(x)
+        for layer in self.network[:len(self.network)-1]:
             x = self.activation(layer(x))
+        x = self.config.out_activation(self.network[-1](x))
         return x
     
     

@@ -4,8 +4,10 @@ from torch.distributions import Categorical
 import gym
 from envs import Lightbot
 from core.config import *
+from lightbot_config import config
+from agents.actor_critic import ActorCritic
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 class Memory:
     def __init__(self):
@@ -20,36 +22,82 @@ class Memory:
         del self.logprobs[:]
         del self.rewards[:]
 
-class ActorCritic(nn.Module):
-    def __init__(self, state_dim, action_dim, n_latent_var):
-        super(ActorCritic, self).__init__()
-        self.affine = nn.Linear(state_dim, n_latent_var)
+# class ActorCritic(nn.Module):
+#     def __init__(self, state_dim, action_dim, n_latent_var):
+#         super(ActorCritic, self).__init__()
+#         self.affine = nn.Linear(state_dim, n_latent_var)
         
-        # actor
-        self.action_layer = nn.Sequential(
-                nn.Linear(state_dim, n_latent_var),
-                nn.Tanh(),
-                nn.Linear(n_latent_var, n_latent_var),
-                nn.Tanh(),
-                nn.Linear(n_latent_var, action_dim),
-                nn.Softmax(dim=-1)
-                )
+#         # actor
+#         self.action_layer = nn.Sequential(
+#                 nn.Linear(state_dim, n_latent_var),
+#                 nn.Tanh(),
+#                 nn.Linear(n_latent_var, n_latent_var),
+#                 nn.Tanh(),
+#                 nn.Linear(n_latent_var, action_dim),
+#                 nn.Softmax(dim=-1)
+#                 )
         
-        # critic
-        self.value_layer = nn.Sequential(
-                nn.Linear(state_dim, n_latent_var),
-                nn.Tanh(),
-                nn.Linear(n_latent_var, n_latent_var),
-                nn.Tanh(),
-                nn.Linear(n_latent_var, 1)
-                )
+#         # critic
+#         self.value_layer = nn.Sequential(
+#                 nn.Linear(state_dim, n_latent_var),
+#                 nn.Tanh(),
+#                 nn.Linear(n_latent_var, n_latent_var),
+#                 nn.Tanh(),
+#                 nn.Linear(n_latent_var, 1)
+#                 )
         
+#     def forward(self):
+#         raise NotImplementedError
+        
+#     def act(self, state, memory):
+#         state = torch.from_numpy(state).float().to(device) 
+#         action_probs = self.action_layer(state)
+#         dist = Categorical(action_probs)
+#         action = dist.sample()
+        
+#         memory.states.append(state)
+#         memory.actions.append(action)
+#         memory.logprobs.append(dist.log_prob(action))
+        
+#         print('ACTION: {}'.format(action))
+#         print('ACTION ITEM: {}'.format(action.item()))
+
+        
+#         return action.item()
+    
+#     def evaluate(self, state, action):
+#         action_probs = self.action_layer(state)
+#         dist = Categorical(action_probs)
+        
+#         action_logprobs = dist.log_prob(action)
+#         dist_entropy = dist.entropy()
+        
+#         state_value = self.value_layer(state)
+        
+#         return action_logprobs, torch.squeeze(state_value), dist_entropy
+
+class ActorCritic2(nn.Module):
+    
+    def __init__(self, config):
+        super(ActorCritic2, self).__init__()
+        
+        self.actor_body = config.init_body()
+        print(self.actor_body)
+#         self.critic_body = config.init_body()
+        self.actor = config.heads['policy'].architecture(config.heads['policy'], self.actor_body)
+        print(self.actor)
+        self.critic = config.heads['value'].architecture(config.heads['value'], self.actor_body)
+        print(self.critic)
+#             heads.append(config.architecture(config, body))
+        
+#         self.actor, self.critic = config.init_heads(self.body)
+
     def forward(self):
         raise NotImplementedError
         
     def act(self, state, memory):
         state = torch.from_numpy(state).float().to(device) 
-        action_probs = self.action_layer(state)
+        action_probs = self.actor(state)
         dist = Categorical(action_probs)
         action = dist.sample()
         
@@ -60,28 +108,44 @@ class ActorCritic(nn.Module):
         return action.item()
     
     def evaluate(self, state, action):
-        action_probs = self.action_layer(state)
+        action_probs = self.actor(state)
         dist = Categorical(action_probs)
         
         action_logprobs = dist.log_prob(action)
         dist_entropy = dist.entropy()
         
-        state_value = self.value_layer(state)
+        state_value = self.critic(state)
         
         return action_logprobs, torch.squeeze(state_value), dist_entropy
+          
         
 class PPO:
-    def __init__(self, state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip):
+    def __init__(self, state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip, config):
         self.lr = lr
         self.betas = betas
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
+        self.config = config
+#         self.config.network.body.indim = state_dim
+#         self.config.network.heads['policy'].outdim = action_dim
+#         self.config.network.heads['value'].outdim = 1
         
-        self.policy = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        
+#         self.config.network.out_dim = action_dim
+#         self.config.network.device = device
+        self.config.network.in_dim = state_dim
+        self.config.network.out_dim = action_dim
+        self.config.network.device = device
+        
+#         self.policy = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        self.policy = ActorCritic(config.network).to(device)
+
         self.optimizer = torch.optim.Adam(self.policy.parameters(),
                                               lr=lr, betas=betas)
-        self.policy_old = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+#         self.policy_old = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+
+        self.policy_old = ActorCritic(config.network).to(device)
         
         self.MseLoss = nn.MSELoss()
     
@@ -152,7 +216,9 @@ def main():
         env.seed(random_seed)
     
     memory = Memory()
-    ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
+    ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip, config)
+
+#     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
     print(lr,betas)
     
     # logging variables

@@ -1,7 +1,9 @@
 import argparse
 import torch
 from envs import FourRooms, Lightbot
-from agents import A2C, PPO
+import torch.nn as nn
+# from agents import A2C, PPO
+from agents import PPO
 
 class BaseConfig(object):
     
@@ -28,7 +30,7 @@ class BaseConfig(object):
 class AlgorithmConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
-        self.gamma = 0.9
+        self.gamma = 0.99
         self.tau = 0.95
         self.set_attributes(kwargs)
         
@@ -48,10 +50,10 @@ class PPOConfig(AlgorithmConfig):
         super().__init__()
         self.name = 'PPO'
         self.init = PPO
-        self.optim_epochs = 5
+        self.optim_epochs = 4
         self.value_iters = 1
         self.minibatch_size = 50
-        self.clip = 0.1
+        self.clip = 0.2
         self.clip_norm = 40
         self.l2_reg = 1e-3
         self.anneal_epochs = True
@@ -74,14 +76,15 @@ class TrainingConfig(BaseConfig):
     def __init__(self, kwargs=None):
         self.optim = None
         self.weight_decay = 0
-        self.lr = 1e-5
+        self.lr = 0.002
         self.lr_scheduler = None
         self.max_episode_length = 100
         self.max_episodes = 20000
-        self.update_every = 100
+        self.update_every = 2000
         self.lr_gamma = 0.9
         self.cuda = True
-        self.device = 0
+        self.betas = (0.9, 0.999)
+        self.device = 1
         self.set_attributes(kwargs)
         
 
@@ -99,7 +102,7 @@ class ExperimentConfig(BaseConfig):
      def __init__(self, kwargs=None):
         self.name = ""
         self.seed = 543
-        self.log_interval = 100
+        self.log_interval = 20
         self.save_episode_data = False
         self.base_dir = 'experiments/'
         self.render = False
@@ -200,11 +203,26 @@ class NetworkConfig(BaseConfig):
     def init_body(self):
         return self.body.architecture(self.body)
     
+#     def init_heads(self, body):
+#         heads = {}
+#         for name, config in self.heads.items():
+#             heads[name] = config.architecture(config, body)
+#         return heads
+
     def init_heads(self, body):
-        heads = {}
+        heads = []
         for name, config in self.heads.items():
-            heads[name] = config.architecture(config, body)
+            heads.append(config.architecture(config, body))
         return heads
+    
+class ActorCriticConfig(BaseConfig):
+    
+    def __init__(self, kwargs=None):
+        self.latent_dim = 64
+        self.in_dim = None
+        self.out_dim = None
+        self.activation = nn.Tanh
+        self.set_attributes(kwargs)
     
     
 class ConvLayerConfig(BaseConfig):

@@ -16,12 +16,13 @@ experiment = ExperimentConfig(
 algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 50,
+    {'max_episode_length': 300,
      'max_episodes': 20000,
      'weight_decay': 0.9,
-     'update_every': 100,
+     'update_every': 2000,
      'lr_scheduler': StepLR,
-     'lr': 1e-5,
+     'lr': .002,
+     'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
      'device': 1
@@ -29,34 +30,39 @@ training = TrainingConfig(
 )
 
 policy_head = FCConfig(
-    {'hdim': 256, 
+    {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.relu,
+     'activation': F.tanh,
+     'out_activation': F.softmax,
      'architecture': FullyConnectedHead
     }
 )
 
 value_head = FCConfig(
-    {'hdim': 256, 
+    {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.relu,
+     'activation': F.tanh,
+     'out_activation': F.tanh,
      'architecture': FullyConnectedHead
     }
 )
 
 body = FCConfig(
-    {'hdim': 256, 
+    {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.relu,
+     'activation': F.tanh,
+     'out_activation': F.tanh,
      'architecture': FullyConnectedBody
     }
 )
 
-network = NetworkConfig(
-    {'heads': {'policy': policy_head, 'value': value_head},
-     'body': body
-    }
-)
+# network = NetworkConfig(
+#     {'heads': {'policy': policy_head, 'value': value_head},
+#      'body': body
+#     }
+# )
+
+network = ActorCriticConfig()
 
 env = LightbotConfig(
     {'puzzle_name': 'debug1'

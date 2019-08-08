@@ -73,9 +73,12 @@ class Logger(object):
         
     def save_checkpoint(self, agent):
         filename = self.checkpointdir+'episode_{}'.format(agent.episode)
-        model = {k: v.state_dict() for k,v in agent.model.items()}
-        optimizer = {k: v.state_dict() for k,v in agent.optimizer.items()}
-        checkpoint = {'model': model, 'optimizer': optimizer}
+        policy = agent.policy.state_dict()
+        optimizer = agent.optimizer.state_dict()
+        checkpoint = {'policy': policy, 'optimizer': optimizer}
+#         model = {k: v.state_dict() for k,v in agent.model.items()}
+#         optimizer = {k: v.state_dict() for k,v in agent.optimizer.items()}
+#         checkpoint = {'model': model, 'optimizer': optimizer}
         torch.save(checkpoint, filename)
         
     # TODO: load_checkpoint()
