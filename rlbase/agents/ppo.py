@@ -36,9 +36,9 @@ class PPO(BaseAgent):
         # Monte Carlo estimate of state rewards:
         rewards = []
         discounted_reward = 0
-        for i, reward in enumerate(reversed(memory.rewards)):
+        for i, reward in enumerate(reversed(memory.reward)):
             discounted_reward = reward \
-                                + (self.config.algorithm.gamma * discounted_reward * memory.masks[i])
+                                + (self.config.algorithm.gamma * discounted_reward * memory.mask[i])
             rewards.insert(0, discounted_reward)
         return rewards
         
@@ -49,9 +49,9 @@ class PPO(BaseAgent):
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
         
         # convert list to tensor
-        old_states = torch.stack(memory.states).to(device).detach()
-        old_actions = torch.stack(memory.actions).to(device).detach()
-        old_logprobs = torch.stack(memory.logprobs).to(device).detach()
+        old_states = torch.stack(memory.state).to(device).detach()
+        old_actions = torch.stack(memory.action).to(device).detach()
+        old_logprobs = torch.stack(memory.logprob).to(device).detach()
         
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
@@ -82,90 +82,87 @@ class PPO(BaseAgent):
         action, start_state, log_prob = self.policy_old.act(state, self.memory)
         state, reward, done, _ = self.env.step(action.item())
         
+        step_data = {
+            'reward': reward, 
+            'mask': bool(not done),
+            'state': start_state,
+            'action': action,
+            'logprob': log_prob
+        }
+        
+#         # Push to memory:
+#         self.memory.push({
+#             'rewards': reward, 
+#             'masks': bool(not done),
+#             'states': start_state,
+#             'actions': action,
+#             'logprobs': log_prob
+#         })
+
         # Push to memory:
-        self.memory.push({
-            'rewards': reward, 
-            'masks': bool(not done),
-            'states': start_state,
-            'actions': action,
-            'logprobs': log_prob
-        })
-        return reward, done
-        
-
-
+        self.memory.push(step_data)
         
         
+        return step_data, state, done
         
-    def train(self):
-        # Logging variables
-        running_reward = 0
-        avg_length = 0
-        timestep = 0
+#     def train(self):
+#         # Logging variables
+#         running_reward = 0
+#         avg_length = 0
+#         timestep = 0
 
-        # Training loop
-        for i_episode in range(1, self.config.training.max_episodes+1):
-            state = self.env.reset()
-            episode_data = {}
-            for t in range(self.config.training.max_episode_length):
-                timestep += 1
-
-                # Running policy_old:
-                action, start_state, log_prob = self.policy_old.act(state, self.memory)
-                state, reward, done, _ = self.env.step(action.item())
+#         # Training loop
+#         for i_episode in range(1, self.config.training.max_episodes+1):
+#             state = self.env.reset()
+#             episode_data = {}
+#             for t in range(self.config.training.max_episode_length):
+#                 timestep += 1
                 
-                # Push to memory:
-                self.memory.push({
-                    'rewards': reward, 
-                    'masks': bool(not done),
-                    'states': start_state,
-                    'actions': action,
-                    'logprobs': log_prob
-                })
+#                 state, reward, done = self.step(state)
 
-                # update if its time
-                if timestep % self.config.training.update_every == 0:
-                    self.update(self.memory)
-                    self.memory.clear()
-                    timestep = 0
+#                 # update if its time
+#                 if timestep % self.config.training.update_every == 0:
+#                     self.update(self.memory)
+#                     self.memory.clear()
+#                     timestep = 0
 
-                running_reward += reward
-                if self.config.experiment.render:
-                    self.env.render()
-                if done:
-                    break
+#                 running_reward += reward
+#                 if self.config.experiment.render:
+#                     self.env.render()
+#                 if done:
+#                     break
 
-            self.episode += 1
-            avg_length += t
+#             self.episode += 1
+#             avg_length += t
 
 
-            # Logging
-            if i_episode % self.config.experiment.log_interval == 0:
-                avg_length = int(avg_length/self.config.experiment.log_interval)
-                running_reward = int((running_reward/self.config.experiment.log_interval))
+#             # Logging
+#             if i_episode % self.config.experiment.log_interval == 0:
+#                 avg_length = int(avg_length/self.config.experiment.log_interval)
+#                 running_reward = int((running_reward/self.config.experiment.log_interval))
 
-                self.logger.push(self.get_summary())
+#                 self.logger.push(self.get_summary())
 
-                #TODO add episode data
-                episode_data = {}
+#                 #TODO add episode data
+#                 episode_data = {}
 
-                if self.config.experiment.save_episode_data:
-                    self.logger.push_episode_data(episode_data)
+#                 if self.config.experiment.save_episode_data:
+#                     self.logger.push_episode_data(episode_data)
 
-                self.logger.plot('running_rewards')
-                self.logger.plot('running_moves')
+#                 self.logger.plot('running_rewards')
+#                 self.logger.plot('running_moves')
 
-                self.logger.save()
-                self.logger.save_checkpoint(self)
+#                 self.logger.save()
+#                 self.logger.save_checkpoint(self)
 
-                if self.config.experiment.save_episode_data:
-                    self.logger.save_episode_data()
+#                 if self.config.experiment.save_episode_data:
+#                     self.logger.save_episode_data()
 
-                print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, 
-                                                                          avg_length, 
-                                                                          running_reward))
-                running_reward = 0
-                avg_length = 0
+#                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, 
+#                                                                           avg_length, 
+#                                                                           running_reward))
+#                 running_reward = 0
+#                 avg_length = 0
                 
-        print('Training complete')
+#         print('Training complete')
 
