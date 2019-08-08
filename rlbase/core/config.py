@@ -71,6 +71,7 @@ class TrainingConfig(BaseConfig):
         self.max_episodes = 20000
         self.update_every = 2000
         self.lr_gamma = 0.9
+        self.action_var = 0.5 # for continuous action spaces
         self.cuda = True
         self.device = 1
         self.set_attributes(kwargs)
@@ -125,7 +126,11 @@ class LightbotConfig(EnvConfig):
         self.set_attributes(kwargs)
         
     def init_env(self):
-        return self.init(self)
+        env = self.init(self)
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.n
+        return env
         
 class LightbotMinigridConfig(EnvConfig):
     

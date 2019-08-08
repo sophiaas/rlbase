@@ -21,9 +21,6 @@ class BaseAgent(object):
         self.eps = np.finfo(np.float32).eps.item()
         self.device = config.training.device
         
-        self.config.network.body.indim = self.env.observation_space.n
-        self.config.network.heads['actor'].outdim = self.env.action_space.n
-        
         self.memory = Memory()
         self.logger = Logger(config)
         
@@ -62,17 +59,19 @@ class BaseAgent(object):
             self.running_moves = self.running_moves * 0.99 + episode_moves * 0.01
 
     def train(self):
-        #TODO: ADD HANDLE RESUME
+        # TODO: Add handle resumes
         running_reward = 0
         avg_length = 0
         timestep = 0
             
+        # Iterate through episodes
         for i_episode in range(1, self.config.training.max_episodes+1):
             episode_reward = 0
             episode_data = defaultdict(list, {'episode': int(self.episode)})
             
             state = self.env.reset()
             
+            # Iterate through steps
             for t in range(self.config.training.max_episode_length):
                 timestep += 1
                 
@@ -95,6 +94,7 @@ class BaseAgent(object):
                 if done:
                     break
                     
+            # Update logging variables
             self.episode += 1
             avg_length += t
             
@@ -105,6 +105,7 @@ class BaseAgent(object):
             if self.config.experiment.save_episode_data:
                 self.logger.push_episode_data(episode_data)
             
+            # Logging
             if i_episode % self.config.experiment.log_interval == 0:
 
                 avg_length = int(avg_length/self.config.experiment.log_interval)
@@ -126,13 +127,6 @@ class BaseAgent(object):
                 self.logger.plot('running_moves')
             
         print('Training complete')
-        
-    def sample_episode(self):
-        return NotImplementedError
     
-    def evaluate(self):
+    def step(self):
         return NotImplementedError
-            
-    def improve(self):
-        return NotImplementedError
-        

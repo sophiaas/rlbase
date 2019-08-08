@@ -17,6 +17,9 @@ class PPO(BaseAgent):
     def __init__(self, config):
         super(PPO, self).__init__(config)
         
+        self.config.network.body.indim = self.config.env.obs_dim
+        self.config.network.heads['actor'].outdim = self.config.env.action_dim
+        
         self.policy = ActorCritic(config).to(self.device)
         self.policy_old = ActorCritic(config).to(self.device)
 
@@ -37,12 +40,12 @@ class PPO(BaseAgent):
         return rewards
         
     def update(self):   
-        # Normalizing the rewards:
+        # Discount and normalize the rewards:
         rewards = self.discount()
         rewards = torch.tensor(rewards).to(self.device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + self.eps)
         
-        # convert list to tensor
+        # Convert list to tensor
         old_states = torch.stack(self.memory.state).to(self.device).detach()
         old_actions = torch.stack(self.memory.action).to(self.device).detach()
         old_logprobs = torch.stack(self.memory.logprob).to(self.device).detach()
@@ -50,13 +53,13 @@ class PPO(BaseAgent):
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
             
-            # Evaluating old actions and values :
+            # Evaluate old actions and values :
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
             
-            # Finding the ratio (pi_theta / pi_theta__old):
+            # Find the ratio (policy / old policy):
             ratios = torch.exp(logprobs - old_logprobs.detach())
                 
-            # Finding Surrogate Loss:
+            # Find surrogate loss:
             advantages = rewards - state_values.detach()
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
@@ -64,7 +67,7 @@ class PPO(BaseAgent):
             loss = -torch.min(surr1, surr2) + 0.5 * self.MSELoss(state_values, rewards) - 0.01 \
                                 * dist_entropy
             
-            # take gradient step
+            # Take gradient step
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
@@ -73,7 +76,7 @@ class PPO(BaseAgent):
         self.policy_old.load_state_dict(self.policy.state_dict())
         
     def step(self, state):
-        # Running policy_old:
+        # Run old policy:
         action, start_state, log_prob = self.policy_old.act(state)
         state, reward, done, _ = self.env.step(action.item())
         
