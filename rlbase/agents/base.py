@@ -21,9 +21,9 @@ class BaseAgent(object):
         self.eps = np.finfo(np.float32).eps.item()
         self.device = config.training.device
         
-        self.config.network.in_dim = self.env.observation_space.n
-        self.config.network.out_dim = self.env.action_space.n
-        self.config.network.device = self.device
+        self.config.network.body.indim = self.env.observation_space.n
+        self.config.network.heads['actor'].outdim = self.env.action_space.n
+#         self.config.network.device = self.device
         
         self.memory = Memory()
         self.logger = Logger(config)

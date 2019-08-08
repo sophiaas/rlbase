@@ -66,12 +66,12 @@ class TrainingConfig(BaseConfig):
         self.weight_decay = 0
         self.lr = 0.002
         self.lr_scheduler = None
+        self.betas = (0.9, 0.999)
         self.max_episode_length = 100
         self.max_episodes = 20000
         self.update_every = 2000
         self.lr_gamma = 0.9
         self.cuda = True
-        self.betas = (0.9, 0.999)
         self.device = 1
         self.set_attributes(kwargs)
         
@@ -198,10 +198,10 @@ class NetworkConfig(BaseConfig):
 #             heads[name] = config.architecture(config, body)
 #         return heads
 
-    def init_heads(self, body):
+    def init_heads(self):
         heads = []
         for name, config in self.heads.items():
-            heads.append(config.architecture(config, body))
+            heads.append(config.architecture(config))
         return heads
     
 class ActorCriticConfig(BaseConfig):

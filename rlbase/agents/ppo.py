@@ -17,8 +17,8 @@ class PPO(BaseAgent):
     def __init__(self, config):
         super(PPO, self).__init__(config)
         
-        self.policy = ActorCritic(config.network).to(self.device)
-        self.policy_old = ActorCritic(config.network).to(self.device)
+        self.policy = ActorCritic(config).to(self.device)
+        self.policy_old = ActorCritic(config).to(self.device)
 
         self.optimizer = config.training.optim(self.policy.parameters(),
                                           lr=self.config.training.lr, 

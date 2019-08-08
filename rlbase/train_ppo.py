@@ -1,5 +1,5 @@
 from agents import PPO
-from lightbot_config import config
+from configs.lightbot import config
 
 def main():
     ppo = PPO(config)

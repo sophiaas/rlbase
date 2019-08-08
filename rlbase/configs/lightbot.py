@@ -43,7 +43,8 @@ value_head = FCConfig(
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
-     'architecture': FullyConnectedHead
+     'architecture': FullyConnectedHead,
+     'outdim': 1
     }
 )
 
@@ -56,13 +57,13 @@ body = FCConfig(
     }
 )
 
-# network = NetworkConfig(
-#     {'heads': {'policy': policy_head, 'value': value_head},
-#      'body': body
-#     }
-# )
+network = NetworkConfig(
+    {'heads': {'actor': policy_head, 'critic': value_head},
+     'body': body
+    }
+)
 
-network = ActorCriticConfig()
+# network = ActorCriticConfig()
 
 env = LightbotConfig(
     {'puzzle_name': 'debug1'
