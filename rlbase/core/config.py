@@ -11,19 +11,7 @@ class BaseConfig(object):
         if kwargs is not None:
             for key, value in kwargs.items():
                 setattr(self, key, value)
-            
-#         self.parser = argparse.ArgumentParser()
-        
-#     def add_argument(self, *args, **kwargs):
-#         self.parser.add_argument(*args, **kwargs)
-
-#     def merge(self, config_dict=None):
-#         if config_dict is None:
-#             args = self.parser.parse_args()
-#             config_dict = args.__dict__
-#         for key in config_dict.keys():
-#             setattr(self, key, config_dict[key])
-            
+                
             
 """Algorithm Config"""
 
