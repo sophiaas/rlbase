@@ -6,7 +6,6 @@ from core.logger import Logger
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-# from envs.utils import set_env
 import gym
 
 """
@@ -25,7 +24,6 @@ class BaseAgent(object):
         self.config.network.in_dim = self.env.observation_space.n
         self.config.network.out_dim = self.env.action_space.n
         self.config.network.device = self.config.training.device
-#         self.memory = Memory(config)
         self.memory = Memory()
         self.logger = Logger(config)
         self.model = None
@@ -82,47 +80,52 @@ class BaseAgent(object):
         self.average_rewards += np.sum(episode_rewards)
         self.average_moves += len(episode_rewards)
 
-    def train(self):
-        #TODO: ADD HANDLE RESUME
+#     def train(self):
+#         #TODO: ADD HANDLE RESUME
+#         running_reward = 0
+#         avg_length = 0
+#         timestep = 0
             
-        while self.episode < self.config.training.max_episodes:
-            episode_data = self.sample_episode()
-            self.logger.push(self.get_summary())
-            if self.config.experiment.save_episode_data:
-                self.logger.push_episode_data(episode_data)
+#         while self.episode < self.config.training.max_episodes:
+#             episode_data = self.sample_episode()
+#             self.logger.push(self.get_summary())
+#             if self.config.experiment.save_episode_data:
+#                 self.logger.push_episode_data(episode_data)
             
-            if self.episode % self.config.experiment.log_interval == 0 and self.episode > 0:
-                self.average_rewards /= self.config.experiment.log_interval
-                self.average_moves /= self.config.experiment.log_interval
+#             if self.episode % self.config.experiment.log_interval == 0 and self.episode > 0:
+#                 self.average_rewards /= self.config.experiment.log_interval
+#                 self.average_moves /= self.config.experiment.log_interval
                 
                 
-                print('---------------------------')
-                print('episode: {}'.format(self.episode))
-#                 print('running_moves: {}'.format(self.running_moves))
-#                 print('running_rewards: {}'.format(self.running_rewards))
-                print('average_moves: {}'.format(self.average_moves))
-                print('average_rewards: {}'.format(self.average_rewards))
-                print('---------------------------')
+#                 print('---------------------------')
+#                 print('episode: {}'.format(self.episode))
+# #                 print('running_moves: {}'.format(self.running_moves))
+# #                 print('running_rewards: {}'.format(self.running_rewards))
+#                 print('average_moves: {}'.format(self.average_moves))
+#                 print('average_rewards: {}'.format(self.average_rewards))
+#                 print('---------------------------')
                 
-                self.average_rewards = 0
-                self.average_moves = 0
+#                 self.average_rewards = 0
+#                 self.average_moves = 0
                 
-                self.logger.save()
-                self.logger.save_checkpoint(self)
+#                 self.logger.save()
+#                 self.logger.save_checkpoint(self)
                 
-                if self.config.experiment.save_episode_data:
-                    self.logger.save_episode_data()
+#                 if self.config.experiment.save_episode_data:
+#                     self.logger.save_episode_data()
                 
-                self.logger.plot('running_rewards')
-                self.logger.plot('running_moves')
+#                 self.logger.plot('running_rewards')
+#                 self.logger.plot('running_moves')
                 
-#             if self.episode % self.config.training.update_every == 0 and self.episode > 0:
-#                 print('updating weights...')
-#                 self.improve()
+# #             if self.episode % self.config.training.update_every == 0 and self.episode > 0:
+# #                 print('updating weights...')
+# #                 self.improve()
                 
-            self.episode += 1
+#             self.episode += 1
             
-        print('Training complete')
+#         print('Training complete')
+
+
         
     def sample_episode(self):
         return NotImplementedError

@@ -34,12 +34,8 @@ class ActorCritic(nn.Module):
         action_probs = self.actor(state)
         dist = Categorical(action_probs)
         action = dist.sample()
-        
-        memory.states.append(state)
-        memory.actions.append(action)
-        memory.logprobs.append(dist.log_prob(action))
-        
-        return action.item()
+        log_prob = dist.log_prob(action)
+        return action, state, log_prob
     
     def evaluate(self, state, action):
         action_probs = self.actor(state)

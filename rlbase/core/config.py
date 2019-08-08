@@ -122,6 +122,7 @@ class EnvConfig(BaseConfig):
         self.allow_impossible = False
         self.continual = False
         self.random_init = True
+        self.solved_reward = None
         self.set_attributes(kwargs)
         
 
