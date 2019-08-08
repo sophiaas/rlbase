@@ -13,16 +13,8 @@ class ActorCritic(nn.Module):
 
     def forward(self):
         raise NotImplementedError
-        
-#     def act(self, state, memory):
-#         state = torch.from_numpy(state).float().to(self.config.device)
-#         action_probs = self.actor(state)
-#         dist = Categorical(action_probs)
-#         action = dist.sample()
-#         log_prob = dist.log_prob(action)
-#         return action, state, log_prob
     
-    def act(self, state, memory):
+    def act(self, state):
         state = torch.from_numpy(state).float().to(self.config.training.device)
         x = self.obs_transform(state)
         action_probs = self.actor(x)
@@ -40,5 +32,4 @@ class ActorCritic(nn.Module):
         dist_entropy = dist.entropy()
         
         state_value = self.critic(x)
-        
         return action_logprobs, torch.squeeze(state_value), dist_entropy

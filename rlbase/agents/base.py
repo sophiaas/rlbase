@@ -23,7 +23,6 @@ class BaseAgent(object):
         
         self.config.network.body.indim = self.env.observation_space.n
         self.config.network.heads['actor'].outdim = self.env.action_space.n
-#         self.config.network.device = self.device
         
         self.memory = Memory()
         self.logger = Logger(config)
@@ -35,17 +34,6 @@ class BaseAgent(object):
         self.running_moves = None
         
         self.episode = 0
-        
-    def reset(self):
-        self.episode = 0
-        self.replay_buffer.clear()
-        self.env.reset()
-
-    def to_cpu(self, x):
-        if type(x) == torch.Tensor:
-            return x.data.cpu().tolist()
-        else:
-            return x
 
     def convert_data(self, x):
         if type(x) == torch.Tensor:
@@ -65,21 +53,13 @@ class BaseAgent(object):
             }
         return summary
             
-    def update_running_rewards(self, episode_rewards):
+    def update_running(self, episode_rewards, episode_moves):
         if self.episode == 1:
-            self.running_rewards = episode_rewards            
-        else:
-            self.running_rewards = self.running_rewards * 0.99 + episode_rewards * 0.01
-            
-    def update_running_moves(self, episode_moves):        
-        if self.episode == 1:
+            self.running_rewards = episode_rewards   
             self.running_moves = episode_moves
         else:
+            self.running_rewards = self.running_rewards * 0.99 + episode_rewards * 0.01
             self.running_moves = self.running_moves * 0.99 + episode_moves * 0.01
-            
-    def update_average_rewards(self, episode_rewards):
-        self.average_rewards += np.sum(episode_rewards)
-        self.average_moves += len(episode_rewards)
 
     def train(self):
         #TODO: ADD HANDLE RESUME
@@ -118,8 +98,7 @@ class BaseAgent(object):
             self.episode += 1
             avg_length += t
             
-            self.update_running_rewards(episode_reward)
-            self.update_running_moves(t)
+            self.update_running(episode_reward, t)
                     
             self.logger.push(self.get_summary())
             

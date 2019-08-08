@@ -3,22 +3,22 @@ import torch
 import torch.nn as nn
 
 from .base import BaseAgent
-from networks.actor_critic import ActorCritic
+from networks.option_critic import OptionCritic
 from core.replay_buffer import Memory
 from envs import Lightbot
 
 
 """
-Advantage Actor-Critic Proximal Policy Optimization
+Option-Critic trained with Proximal Policy Optimization
 """
 
-class PPO(BaseAgent):
+class PPOC(BaseAgent):
     
     def __init__(self, config):
-        super(PPO, self).__init__(config)
+        super(PPOC, self).__init__(config)
         
-        self.policy = ActorCritic(config).to(self.device)
-        self.policy_old = ActorCritic(config).to(self.device)
+        self.policy = OptionCritic(config).to(self.device)
+        self.policy_old = OptionCritic(config).to(self.device)
 
         self.optimizer = config.training.optim(self.policy.parameters(),
                                           lr=self.config.training.lr, 
@@ -74,7 +74,7 @@ class PPO(BaseAgent):
         
     def step(self, state):
         # Running policy_old:
-        action, start_state, log_prob = self.policy_old.act(state)
+        action, start_state, log_prob = self.policy_old.act(state, self.memory)
         state, reward, done, _ = self.env.step(action.item())
         
         step_data = {

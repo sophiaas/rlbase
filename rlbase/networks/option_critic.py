@@ -38,3 +38,32 @@ class OptionHead(nn.Module):
 class OptionCritic(nn.Module):
     
     def __init__(self, config):
+        super(OptionHead, self).__init__()
+        
+        self.obs_transform = self.config.network.init_body()
+        self.actor, self.critic = self.config.network.init_heads()
+        
+    def forward(self):
+        raise NotImplementedError
+        
+    def act(self, state, option):
+        state = torch.from_numpy(state).float().to(self.config.training.device)
+        x = self.obs_transform(state)
+        action_probs = self.actor(x)
+        dist = Categorical(action_probs)
+        action = dist.sample()
+        log_prob = dist.log_prob(action)
+        return action, state, log_prob
+    
+    def evaluate(self, state, action):
+        x = self.obs_transform(state)
+        action_probs = self.actor(x)
+        dist = Categorical(action_probs)
+        
+        action_logprobs = dist.log_prob(action)
+        dist_entropy = dist.entropy()
+        
+        state_value = self.critic(x)
+        
+        return action_logprobs, torch.squeeze(state_value), dist_entropy
+        
