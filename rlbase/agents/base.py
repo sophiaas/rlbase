@@ -1,38 +1,40 @@
+import numpy as np
 import torch
-import torch.nn as nn
-from torch.distributions import Categorical
+import gym
+from collections import defaultdict
+
 from core.replay_buffer import Memory
 from core.logger import Logger
-import pandas as pd
-import numpy as np
-from collections import defaultdict
-import gym
+
 
 """
 Base class for Deep RL agents
 """
-EPS = np.finfo(np.float32).eps.item()
-
-
 
 class BaseAgent(object):
     
     def __init__(self, config):
         self.config = config
-        self.env = self.config.env.init_env()
-        print('env: {}'.format(self.env))
+        
+        self.env = config.env.init_env()
+        
+        self.eps = np.finfo(np.float32).eps.item()
+        self.device = config.training.device
+        
         self.config.network.in_dim = self.env.observation_space.n
         self.config.network.out_dim = self.env.action_space.n
-        self.config.network.device = self.config.training.device
+        self.config.network.device = self.device
+        
         self.memory = Memory()
         self.logger = Logger(config)
+        
         self.model = None
         self.policy = None
-        self.episode = 0
+       
         self.running_rewards = None
         self.running_moves = None
-        self.average_rewards = 0
-        self.average_moves = 0
+        
+        self.episode = 0
         
     def reset(self):
         self.episode = 0
@@ -87,37 +89,45 @@ class BaseAgent(object):
             
         for i_episode in range(1, self.config.training.max_episodes+1):
             episode_reward = 0
-            state = self.env.reset()
             episode_data = defaultdict(list, {'episode': int(self.episode)})
+            
+            state = self.env.reset()
+            
             for t in range(self.config.training.max_episode_length):
                 timestep += 1
+                
                 transition, state, done = self.step(state)
+                
                 for key, val in transition.items():
                     episode_data[key].append(self.convert_data(val))
+                    
                 episode_reward += transition['reward']
                 
                 if timestep % self.config.training.update_every == 0:
-                    self.update(self.memory)
+                    self.update()
                     self.memory.clear()
                     timestep = 0
 
                 running_reward += transition['reward']
+                
                 if self.config.experiment.render:
                     self.env.render()
                 if done:
                     break
+                    
             self.episode += 1
             avg_length += t
+            
             self.update_running_rewards(episode_reward)
             self.update_running_moves(t)
                     
             self.logger.push(self.get_summary())
+            
             if self.config.experiment.save_episode_data:
                 self.logger.push_episode_data(episode_data)
             
             if i_episode % self.config.experiment.log_interval == 0:
-                self.average_rewards /= self.config.experiment.log_interval
-                self.average_moves /= self.config.experiment.log_interval
+
                 avg_length = int(avg_length/self.config.experiment.log_interval)
                 running_reward = int((running_reward/self.config.experiment.log_interval))
     
