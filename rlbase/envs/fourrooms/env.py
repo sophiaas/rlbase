@@ -110,7 +110,8 @@ wwwwwwwwwwwww
         frame_count = 1
         self.frame_count += frame_count
         
-        return {'next_state': state, 'reward': reward, 'done': done}
+        return state, reward, done, {}
+#         return {'next_state': state, 'reward': reward, 'done': done}
     
     def set_action_space(self):
         # Actions are discrete integer values

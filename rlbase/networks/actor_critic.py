@@ -19,15 +19,18 @@ class ActorCritic(nn.Module):
         state = torch.from_numpy(state).float().to(self.config.training.device)
         x = self.obs_transform(state)
         
-        if self.config.env.action_space == gym.spaces.Discrete:
+        if type(self.config.env.action_space) == gym.spaces.Discrete:
             action_probs = self.actor(x)
             dist = Categorical(action_probs)
             
-        elif self.config.env.action_space == gym.spaces.Box:
+        elif type(self.config.env.action_space) == gym.spaces.Box:
             action_mean = self.actor(x)
             cov_mat = torch.diag(self.config.training.action_var).to(self.config.training.device)
             dist = MultivariateNormal(action_mean, cov_mat)
             
+        else:
+            raise ValueError('env action space must be either gym.spaces.Discrete or gym.spaces.Box') 
+        
         action = dist.sample()
         log_prob = dist.log_prob(action)
         return action, state, log_prob
@@ -36,14 +39,19 @@ class ActorCritic(nn.Module):
     def evaluate(self, state, action):
         x = self.obs_transform(state)
         
-        if self.config.env.action_space == gym.spaces.Discrete:
+        #TODO: consolidate this and the section in act()
+        
+        if type(self.config.env.action_space) == gym.spaces.Discrete:
             action_probs = self.actor(x)
             dist = Categorical(action_probs)
             
-        elif self.config.env.action_space == gym.spaces.Box:
+        elif type(self.config.env.action_space) == gym.spaces.Box:
             action_mean = self.actor(x)
             cov_mat = torch.diag(self.config.training.action_var).to(self.config.training.device)
             dist = MultivariateNormal(action_mean, cov_mat)
+            
+        else:
+            raise ValueError('env action space must be either gym.spaces.Discrete or gym.spaces.Box') 
         
         action_logprobs = dist.log_prob(action)
         dist_entropy = dist.entropy()

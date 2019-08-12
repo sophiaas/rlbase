@@ -46,7 +46,7 @@ class PPOConfig(AlgorithmConfig):
         self.l2_reg = 1e-3
         self.anneal_epochs = True
         self.set_attributes(kwargs)
-        
+    
         
 class OCConfig(PPOConfig):
     
@@ -54,6 +54,7 @@ class OCConfig(PPOConfig):
         super().__init__()
         self.name = 'PPOC'
         self.n_options = 4
+        self.dc = 0.1
         self.set_attributes(kwargs)
         
         
@@ -91,7 +92,7 @@ class ExperimentConfig(BaseConfig):
      def __init__(self, kwargs=None):
         self.name = ""
         self.seed = 543
-        self.log_interval = 20
+        self.log_interval = 100
         self.save_episode_data = False
         self.base_dir = 'experiments/'
         self.render = False
@@ -113,6 +114,9 @@ class EnvConfig(BaseConfig):
         self.random_init = True
         self.solved_reward = None
         self.set_attributes(kwargs)
+        
+    def init_env(self):
+        return NotImplementedErrors
         
 
 class LightbotConfig(EnvConfig):
@@ -171,9 +175,14 @@ class FourRoomsConfig(EnvConfig):
         self.init = FourRooms #ENV
         self.size = 20
         self.set_attributes(kwargs)
+
         
     def init_env(self):
-        self.init()
+        env = self.init()
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.n
+        return env
         
 
 class MujocoConfig(EnvConfig):

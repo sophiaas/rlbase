@@ -60,6 +60,7 @@ class Logger(object):
         self.episode_data = self.episode_data.append(episode_data, ignore_index=True)
 
     def save(self):
+#         print('LOG DATA: {}'.format(self.data))
         self.data.to_pickle(self.logdir+'summary.p')
 
     def load(self, name):
