@@ -55,11 +55,13 @@ class OCConfig(PPOConfig):
         self.name = 'PPOC'
         self.n_options = 4
         self.dc = 0.1
-        self.set_attributes(kwargs)
         self.block_ent_penalty = False
-        self.sample_blocks = False
+        self.sample_blocks = True
         self.n_block_samples = 10000
+        self.block_ent_coeff = 0.1
         self.max_block_length = 8
+        self.set_attributes(kwargs)
+
         
         
 """Training Config"""

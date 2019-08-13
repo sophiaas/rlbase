@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.distributions import Categorical
 
 from .base import BaseAgent
 from networks.option_critic import OptionCritic
@@ -58,32 +59,45 @@ class PPOC(BaseAgent):
             rewards.insert(0, discounted_reward)
         return rewards
     
-    def sample_blocks(self, sequence, max_length, n_samples):
+    def get_blocks(sequence, masks, max_length):
+        #TODO: make sure masking is working
         blocks = {x: [] for x in range(2, max_length+1)}
+        for i in range(2, max_length+1):
+            m = [tuple(masks[a:a+i]) for a in range(len(masks)-i)]
+            exclude = [x for x in m if (x==0).nonzero().shape[0] > 0]
+            blocks[i] += [tuple(sequence[a:a+i]) for a in range(len(sequence)-i) if a not in exclude]
+        return blocks
+    
+    def sample_blocks(self, sequence, masks, max_length, n_samples):
+        #TODO: make sure masking is working
+
+        blocks = {x: [] for x in range(2, max_length+1)}
+        episode_ends = (masks==0).nonzero()
         for b in range(2, max_length+1):
             for i in range(n_samples):
-#                 idx0 = np.random.randint(sequences.shape[0])
-#                 idx1 = np.random.randint(sequences[idx0].shape[0]-max_length)
-                idx = np.random.randint(sequence.shape[0]-max_length)
+                nonvalid = []
+                for end in episode_ends:
+                    nonvalid += [end-x for x in range(b+1)]
+                idx_set = [x for x in range(sequence.shape[0]-max_length) if x not in nonvalid]
+                idx = np.random.choice(idx_set)
                 random_block = tuple(sequence[idx:idx+b])
-#                 random_block = tuple(sequences[idx0,idx1:idx1+b])
                 blocks[b].append(random_block)            
         return blocks
 
-    def block_entropy(self, sequence, possible_values):
+    def block_entropy(self, sequence, masks, possible_values):
         max_length = self.config.algorithm.max_block_length
         if self.config.algorithm.sample_blocks:
-            blocks = self.sample_blocks(sequence, max_length, self.config.algorithm.n_block_samples)
+            blocks = self.sample_blocks(sequence, masks, max_length, self.config.algorithm.n_block_samples)
         else:
             blocks = self.get_blocks(sequence, max_length)
-        probs = {i: torch.zeros(size=[possible_values]*i) for i in range(2, max_split+1)}
-        for d in range(2, max_split+1):
+        probs = {i: torch.zeros(size=[possible_values]*i) for i in range(2, max_length+1)}
+        for d in range(2, max_length+1):
             for instance in blocks[d]:
                 probs[d][instance] += 1
         distributions = [Categorical(x.view(-1)) for i,x in probs.items()]
         entropy = torch.tensor([x.entropy() for x in distributions])
         block_H = entropy.mean()
-        return block_H
+        return block_H, entropy
         
     def update(self):   
         # Normalizing the rewards:
@@ -93,12 +107,22 @@ class PPOC(BaseAgent):
         
         # convert list to tensor
         old_states = torch.stack(self.memory.state).to(self.device).detach()
+        old_masks = torch.tensor(self.memory.mask).to(self.device).detach()
+#         old_masks = torch.stack(self.memory.mask).to(self.device).detach()
         old_actions = torch.stack(self.memory.action).to(self.device).detach()
         old_action_logprobs = torch.stack(self.memory.action_logprob).to(self.device).detach()
         old_term_probs = torch.stack(self.memory.term_prob).to(self.device).detach()
         old_options = torch.stack(self.memory.option).to(self.device).detach()
         old_option_logprobs = torch.stack(self.memory.option_logprob).to(self.device).detach()
         
+        if self.config.algorithm.block_ent_penalty:
+            block_entropy, e = self.block_entropy(old_actions, old_masks, self.config.env.action_dim)
+            be_loss = self.config.algorithm.block_ent_coeff * block_entropy
+            print('BLOCK ENTROPY: {}'.format(block_entropy))
+            print('E: {}'.format(e))
+            print('be loss: {}'.format(be_loss))
+
+
         
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
@@ -155,7 +179,6 @@ class PPOC(BaseAgent):
             loss = actor_loss + option_actor_loss + critic_loss + term_loss + entropy_penalties
         
             if self.config.algorithm.block_ent_penalty:
-                block_entropy = self.block_ent_coeff * self.block_entropy(old_actions, self.config.env.action_dim)
                 loss += block_entropy
 
             #TODO: separate term_loss and others (does this really matter tho?)

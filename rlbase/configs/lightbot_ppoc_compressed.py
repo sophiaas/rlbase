@@ -8,9 +8,10 @@ from networks.bodies import FullyConnectedBody
 HDIM = 64
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_cross_compressed',
+    {'name': 'ppoc_lightbot_cross_compressed_v2',
      'base_dir': 'experiments/',
      'save_episode_data': True,
+     'log_interval': 20,
      'debug': True
     }
 )
@@ -19,15 +20,16 @@ algorithm = OCConfig(
     {'option_eps': 0.1,
      'dc': 0.1, #deliberation cost
      'n_options': 4,
-     'block_ent_penalty': True
+     'block_ent_penalty': True,
+     'n_block_samples': 1000
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
      'weight_decay': 0.9,
-     'update_every': 20000,
+     'update_every': 1000,
      'lr_scheduler': StepLR,
      'lr': .002,
      'ent_coeff': 0.1,
