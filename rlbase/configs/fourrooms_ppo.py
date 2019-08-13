@@ -5,8 +5,10 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
+HDIM = 64
+
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_v2',
+    {'name': 'ppo_fourooms',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -25,12 +27,12 @@ training = TrainingConfig(
      'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 3
     }
 )
 
 policy_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax,
@@ -39,7 +41,7 @@ policy_head = FCConfig(
 )
 
 value_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -49,7 +51,7 @@ value_head = FCConfig(
 )
 
 body = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -65,10 +67,7 @@ network = NetworkConfig(
 
 # network = ActorCriticConfig()
 
-env = LightbotConfig(
-    {'puzzle_name': 'debug1'
-    }
-)
+env = FourRoomsConfig()
 
 config = Config(
     {'experiment': experiment, 

@@ -5,64 +5,70 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
+HDIM = 256
+
 experiment = ExperimentConfig(
-    {'name': 'a2c_test_fourrooms',
+    {'name': 'ppo_lightbot_cross',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
     }
 )
 
-algorithm = A2CConfig(
-    {'gamma': 0.9
-    }
-)
-# algorithm = PPOConfig()
+algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
+    {'max_episode_length': 300,
      'max_episodes': 20000,
      'weight_decay': 0.9,
-     'update_every': 10,
+     'update_every': 20000,
      'lr_scheduler': StepLR,
-     'lr': 1e-5,
+     'lr': .002,
+     'betas': (0.9, 0.999),
      'optim': Adam,
-     'cuda': True
+     'cuda': True,
+     'device': 1
     }
 )
 
 policy_head = FCConfig(
-    {'hdim': 256, 
+    {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.relu,
+     'activation': F.tanh,
+     'out_activation': F.softmax,
      'architecture': FullyConnectedHead
     }
 )
 
 value_head = FCConfig(
-    {'hdim': 256, 
+    {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.relu,
-     'architecture': FullyConnectedHead
+     'activation': F.tanh,
+     'out_activation': F.tanh,
+     'architecture': FullyConnectedHead,
+     'outdim': 1
     }
 )
 
 body = FCConfig(
-    {'hdim': 256, 
-     'nlayers': 2,
-     'activation': F.relu,
+    {'hdim': HDIM, 
+     'nlayers': 1,
+     'activation': F.tanh,
+     'out_activation': F.tanh,
      'architecture': FullyConnectedBody
     }
 )
 
 network = NetworkConfig(
-    {'heads': {'policy': policy_head, 'value': value_head},
+    {'heads': {'actor': policy_head, 'critic': value_head},
      'body': body
     }
 )
 
-env = FourRoomsConfig(
-    {'action_dim': 4
+# network = ActorCriticConfig()
+
+env = LightbotConfig(
+    {'puzzle_name': 'cross'
     }
 )
 

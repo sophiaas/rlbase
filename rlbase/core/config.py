@@ -131,7 +131,7 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "10,01,-1,-1"
+        self.reward_fn = "10,10,-1,-1"
         self.puzzle_name = "debug1"
         self.set_attributes(kwargs)
         

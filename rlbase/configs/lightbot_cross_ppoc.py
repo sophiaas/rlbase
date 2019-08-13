@@ -5,8 +5,10 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
+HDIM = 256
+
 experiment = ExperimentConfig(
-    {'name': 'ppoc_fourrooms',
+    {'name': 'ppoc_lightbot_cross',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -23,20 +25,20 @@ algorithm = OCConfig(
 training = TrainingConfig(
     {'max_episode_length': 300,
      'max_episodes': 20000,
-     'weight_decay': 0.9, #TODO: Add weight decay (currently inactive)
+     'weight_decay': 0.9,
      'update_every': 20000,
-     'lr_scheduler': StepLR, #TODO: add lr scheduler (currently inactive)
+     'lr_scheduler': StepLR,
      'lr': .002,
-     'betas': (0.9, 0.999), #TODO: unnecessary. remove
      'ent_coeff': 0.1,
+     'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
-     'device': 2
+     'device': 3
     }
 )
 
 actor_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax, # make sure softmax happens over the right dimension
@@ -47,7 +49,7 @@ actor_head = FCConfig(
 )
 
 option_actor_head =  FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax, # make sure softmax happens over the right dimension
@@ -57,7 +59,7 @@ option_actor_head =  FCConfig(
 )
 
 critic_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -68,7 +70,7 @@ critic_head = FCConfig(
 )
 
 termination_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax,
@@ -79,7 +81,7 @@ termination_head = FCConfig(
 )
 
 body = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -98,7 +100,10 @@ network = NetworkConfig(
     }
 )
 
-env = FourRoomsConfig()
+env = LightbotConfig(
+    {'puzzle_name': 'cross'
+    }
+)
 
 config = Config(
     {'experiment': experiment, 

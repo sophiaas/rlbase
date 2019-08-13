@@ -5,10 +5,10 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 64
+HDIM = 256
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_new',
+    {'name': 'ppoc_lightbot_zigzag',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -23,7 +23,7 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 200,
+    {'max_episode_length': 300,
      'max_episodes': 20000,
      'weight_decay': 0.9,
      'update_every': 20000,
@@ -33,7 +33,7 @@ training = TrainingConfig(
      'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
@@ -101,7 +101,7 @@ network = NetworkConfig(
 )
 
 env = LightbotConfig(
-    {'puzzle_name': 'cross'
+    {'puzzle_name': 'zigzag'
     }
 )
 
