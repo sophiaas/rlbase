@@ -110,7 +110,7 @@ wwwwwwwwwwwww
         frame_count = 1
         self.frame_count += frame_count
         
-        return state, reward, done, {}
+        return state, reward, done, {'coords': self.currentcell}
 #         return {'next_state': state, 'reward': reward, 'done': done}
     
     def set_action_space(self):

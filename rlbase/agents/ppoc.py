@@ -20,7 +20,7 @@ class PPOC(BaseAgent):
         
         self.memory = Memory(features=['reward', 'mask', 'state', 'action',
                                        'action_logprob', 'option', 'option_logprob',
-                                       'term_prob', 'terminate'])
+                                       'term_prob', 'terminate', 'env_data'])
 
         self.n_options = self.config.algorithm.n_options
         
@@ -54,10 +54,36 @@ class PPOC(BaseAgent):
         rewards = []
         discounted_reward = 0
         for i, reward in enumerate(reversed(self.memory.reward)):
-            discounted_reward = reward \
-                                + (self.config.algorithm.gamma * discounted_reward * self.memory.mask[i])
+            discounted_reward = reward + (self.config.algorithm.gamma * discounted_reward * self.memory.mask[i])
             rewards.insert(0, discounted_reward)
         return rewards
+    
+    def sample_blocks(self, sequence, max_length, n_samples):
+        blocks = {x: [] for x in range(2, max_length+1)}
+        for b in range(2, max_length+1):
+            for i in range(n_samples):
+#                 idx0 = np.random.randint(sequences.shape[0])
+#                 idx1 = np.random.randint(sequences[idx0].shape[0]-max_length)
+                idx = np.random.randint(sequence.shape[0]-max_length)
+                random_block = tuple(sequence[idx:idx+b])
+#                 random_block = tuple(sequences[idx0,idx1:idx1+b])
+                blocks[b].append(random_block)            
+        return blocks
+
+    def block_entropy(self, sequence, possible_values):
+        max_length = self.config.algorithm.max_block_length
+        if self.config.algorithm.sample_blocks:
+            blocks = self.sample_blocks(sequence, max_length, self.config.algorithm.n_block_samples)
+        else:
+            blocks = self.get_blocks(sequence, max_length)
+        probs = {i: torch.zeros(size=[possible_values]*i) for i in range(2, max_split+1)}
+        for d in range(2, max_split+1):
+            for instance in blocks[d]:
+                probs[d][instance] += 1
+        distributions = [Categorical(x.view(-1)) for i,x in probs.items()]
+        entropy = torch.tensor([x.entropy() for x in distributions])
+        block_H = entropy.mean()
+        return block_H
         
     def update(self):   
         # Normalizing the rewards:
@@ -90,7 +116,10 @@ class PPOC(BaseAgent):
         
             term_advantages = option_values.detach() \
                               - torch.sum((option_values_full * option_probs), 1) \
-                              + self.config.algorithm.dc #TODO: change multiply and sum to mat mul?
+                              + self.config.algorithm.dc #TODO: change multiply and sum to mat mul? 
+                            #should option_vals and option_probs be detached??
+#                               - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
+
             
             # Finding Action Surrogate Loss:
             advantages = rewards - option_values.detach()
@@ -124,8 +153,13 @@ class PPOC(BaseAgent):
 #             print('entropy_penalties {}'.format(entropy_penalties.shape))
             
             loss = actor_loss + option_actor_loss + critic_loss + term_loss + entropy_penalties
-            
+        
+            if self.config.algorithm.block_ent_penalty:
+                block_entropy = self.block_ent_coeff * self.block_entropy(old_actions, self.config.env.action_dim)
+                loss += block_entropy
 
+            #TODO: separate term_loss and others (does this really matter tho?)
+            
             # take gradient step
             self.optimizer.zero_grad()
             loss.mean().backward()
@@ -138,7 +172,7 @@ class PPOC(BaseAgent):
         # Running policy_old:
         start_state, action, action_logprob, option, option_logprob, \
                     term_prob, terminate = self.policy_old.act(state, self.current_option)
-        state, reward, done, _ = self.env.step(action.item())
+        state, reward, done, env_data = self.env.step(action.item())
         self.current_option = option.data
         
         step_data = {
@@ -150,7 +184,8 @@ class PPOC(BaseAgent):
             'option': option,
             'option_logprob': option_logprob,
             'term_prob': term_prob,
-            'terminate': terminate
+            'terminate': terminate,
+            'env_data': env_data
         }
         
         # Push to memory:

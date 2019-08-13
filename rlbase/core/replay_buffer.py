@@ -1,7 +1,7 @@
 
 class Memory(object):
     
-    def __init__(self, features=['action', 'state', 'logprob', 'reward', 'mask']):
+    def __init__(self, features=['action', 'state', 'logprob', 'reward', 'mask', 'env_data']):
         self.features = features
         self.clear()
     

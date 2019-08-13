@@ -56,6 +56,10 @@ class OCConfig(PPOConfig):
         self.n_options = 4
         self.dc = 0.1
         self.set_attributes(kwargs)
+        self.block_ent_penalty = False
+        self.sample_blocks = False
+        self.n_block_samples = 10000
+        self.max_block_length = 8
         
         
 """Training Config"""

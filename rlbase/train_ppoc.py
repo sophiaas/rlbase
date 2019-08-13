@@ -1,5 +1,6 @@
 from agents import PPOC
-from configs.fourrooms_ppoc import config
+# from configs.fourrooms_ppoc import config
+from configs.lightbot_ppoc_compressed import config
 import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 

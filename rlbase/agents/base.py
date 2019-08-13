@@ -30,7 +30,7 @@ class BaseAgent(object):
         self.running_rewards = None
         self.running_moves = None
         
-        self.episode = 1
+        self.episode = 0
 
     def convert_data(self, x):
         if type(x) == torch.Tensor:

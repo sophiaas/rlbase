@@ -78,14 +78,15 @@ class PPO(BaseAgent):
     def step(self, state):
         # Run old policy:
         action, start_state, log_prob = self.policy_old.act(state)
-        state, reward, done, _ = self.env.step(action.item())
+        state, reward, done, env_data = self.env.step(action.item())
         
         step_data = {
             'reward': reward, 
             'mask': bool(not done),
             'state': start_state,
             'action': action,
-            'logprob': log_prob
+            'logprob': log_prob,
+            'env_data': env_data
         }
         
         # Push to memory:

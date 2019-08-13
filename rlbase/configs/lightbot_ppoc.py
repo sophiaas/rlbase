@@ -5,8 +5,10 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
+HDIM = 64
+
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot',
+    {'name': 'ppoc_lightbot_new',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -21,12 +23,13 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 200,
      'max_episodes': 20000,
      'weight_decay': 0.9,
-     'update_every': 2000,
+     'update_every': 20000,
      'lr_scheduler': StepLR,
      'lr': .002,
+     'ent_coeff': 0.1,
      'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
@@ -35,7 +38,7 @@ training = TrainingConfig(
 )
 
 actor_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax, # make sure softmax happens over the right dimension
@@ -46,7 +49,7 @@ actor_head = FCConfig(
 )
 
 option_actor_head =  FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax, # make sure softmax happens over the right dimension
@@ -56,7 +59,7 @@ option_actor_head =  FCConfig(
 )
 
 critic_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -67,7 +70,7 @@ critic_head = FCConfig(
 )
 
 termination_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.softmax,
@@ -78,7 +81,7 @@ termination_head = FCConfig(
 )
 
 body = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': F.tanh,
      'out_activation': F.tanh,
@@ -97,10 +100,8 @@ network = NetworkConfig(
     }
 )
 
-# network = ActorCriticConfig()
-
-env = FourroomsConfig(
-    {'puzzle_name': 'debug1'
+env = LightbotConfig(
+    {'puzzle_name': 'cross'
     }
 )
 

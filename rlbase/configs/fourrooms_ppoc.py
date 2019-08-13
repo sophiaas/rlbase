@@ -6,7 +6,7 @@ from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_newloss',
+    {'name': 'ppoc_fourrooms_removedetach',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -21,13 +21,13 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
      'weight_decay': 0.9, #TODO: Add weight decay (currently inactive)
      'update_every': 20000,
      'lr_scheduler': StepLR, #TODO: add lr scheduler (currently inactive)
      'lr': .002,
-     'betas': (0.9, 0.999),
+     'betas': (0.9, 0.999), #TODO: unnecessary. remove
      'ent_coeff': 0.1,
      'optim': Adam,
      'cuda': True,
