@@ -39,8 +39,8 @@ class PPOConfig(AlgorithmConfig):
         self.name = 'PPO'
         self.init = PPO
         self.optim_epochs = 4
-        self.value_iters = 1
-        self.minibatch_size = 50
+        self.value_iters = 1 #remove no longer relevant
+#         self.minibatch_size = 50 #added to training config
         self.clip = 0.2
         self.clip_norm = 40
         self.l2_reg = 1e-3
@@ -70,10 +70,11 @@ class TrainingConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
         self.optim = None
-        self.weight_decay = 0
-        self.lr = 0.002
+        self.weight_decay = 1e-5
+        self.lr = 1e-3
         self.lr_scheduler = None
         self.betas = (0.9, 0.999)
+        self.minibatch_size = 50
         self.max_episode_length = 100
         self.max_episodes = 20000
         self.update_every = 2000

@@ -25,18 +25,28 @@ class PPO(BaseAgent):
 
         self.optimizer = config.training.optim(self.policy.parameters(),
                                           lr=self.config.training.lr, 
-                                          betas=self.config.training.betas)
+                                          betas=self.config.training.betas,
+                                          weight_decay=self.config.training.weight_decay)
 
-        self.MSELoss = nn.MSELoss()
+        self.lr_scheduler = self.config.training.lr_scheduler(self.optimizer, 
+                                                              step_size=1, 
+                                                              gamma=config.training.lr_gamma)
         
     def discount(self):
         # Monte Carlo estimate of state rewards:
         rewards = []
         discounted_reward = 0
+#         d = 0
+#         v = 0
+#         a = 0
         for i, reward in enumerate(reversed(self.memory.reward)):
             discounted_reward = reward \
                                 + (self.config.algorithm.gamma * discounted_reward * self.memory.mask[i])
             rewards.insert(0, discounted_reward)
+#             d = reward + self.config.algorithm.gamma * v * self.memory.mask[i] - self.memory.value[i]
+#             a = d + self.config.algorithm.gamma * self.config.algorithm.tau * a * self.memory.mask[i]
+#             v = self.memory.value[i]
+#             advantages.insert(0, a)
         return rewards
         
     def update(self):   
@@ -52,25 +62,35 @@ class PPO(BaseAgent):
         
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
-            
-            # Evaluate old actions and values :
-            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
-            
-            # Find the ratio (policy / old policy):
-            ratios = torch.exp(logprobs - old_logprobs.detach())
-                
-            # Find surrogate loss:
-            advantages = rewards - state_values.detach()
-            surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
-                                * advantages
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MSELoss(state_values, rewards) - 0.01 \
-                                * dist_entropy
-            
-            # Take gradient step
-            self.optimizer.zero_grad()
-            loss.mean().backward()
-            self.optimizer.step()
+            permutation = torch.randperm(old_states.shape[0]).to(self.device)
+            for m in range(0, old_states.shape[0], self.config.training.minibatch_size):
+                idxs = permutation[m:m+self.config.training.minibatch_size]
+
+#                 # Evaluate old actions and values :
+                logprobs, state_values, dist_entropy = self.policy.evaluate(old_states[idxs], old_actions[idxs])
+
+#                 # Find the ratio (policy / old policy):
+                ratios = torch.exp(logprobs - old_logprobs.detach()[idxs])
+
+#                 # Find surrogate loss:
+#                 #TODO: this is different than the advantage calculation in old code. Find out if it matters
+                advantages = rewards[idxs] - state_values.detach()
+                surr1 = ratios * advantages
+                surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
+                                    * advantages
+                actor_loss = -torch.min(surr1, surr2) 
+                critic_loss = (state_values - rewards[idxs]) ** 2
+                entropy_penalty = -0.01 * dist_entropy
+                loss = actor_loss + critic_loss + entropy_penalty
+
+#                 # Take gradient step
+                self.optimizer.zero_grad()
+                loss.mean().backward()
+                nn.utils.clip_grad_norm_(self.policy.parameters(), 40)
+                self.optimizer.step()
+        
+        # Step learning rate
+        self.lr_scheduler.step()
         
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())

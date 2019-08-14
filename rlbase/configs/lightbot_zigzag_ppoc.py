@@ -25,12 +25,10 @@ algorithm = OCConfig(
 training = TrainingConfig(
     {'max_episode_length': 300,
      'max_episodes': 20000,
-     'weight_decay': 0.9,
      'update_every': 20000,
      'lr_scheduler': StepLR,
      'lr': .002,
      'ent_coeff': 0.1,
-     'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
      'device': 0
@@ -40,8 +38,8 @@ training = TrainingConfig(
 actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax, # make sure softmax happens over the right dimension
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -51,8 +49,8 @@ actor_head = FCConfig(
 option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax, # make sure softmax happens over the right dimension
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -61,8 +59,8 @@ option_actor_head =  FCConfig(
 critic_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'outdim': None, # num options
 #      'n_options': None,
      'architecture': FullyConnectedHead
@@ -72,8 +70,8 @@ critic_head = FCConfig(
 termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax,
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
 #      'n_options': None
@@ -83,8 +81,8 @@ termination_head = FCConfig(
 body = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,
      'indim': None # observation dim
     }

@@ -20,11 +20,9 @@ algorithm = PPOConfig()
 training = TrainingConfig(
     {'max_episode_length': 300,
      'max_episodes': 20000,
-     'weight_decay': 0.9,
      'update_every': 20000,
      'lr_scheduler': StepLR,
      'lr': .002,
-     'betas': (0.9, 0.999),
      'optim': Adam,
      'cuda': True,
      'device': 1
@@ -34,8 +32,8 @@ training = TrainingConfig(
 policy_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax,
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
     }
 )
@@ -43,8 +41,8 @@ policy_head = FCConfig(
 value_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedHead,
      'outdim': 1
     }
@@ -53,8 +51,8 @@ value_head = FCConfig(
 body = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody
     }
 )

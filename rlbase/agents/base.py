@@ -6,6 +6,8 @@ from collections import defaultdict
 from core.replay_buffer import Memory
 from core.logger import Logger
 
+from torch.optim.lr_scheduler import StepLR
+
 
 """
 Base class for Deep RL agents
@@ -14,6 +16,7 @@ Base class for Deep RL agents
 class BaseAgent(object):
     
     def __init__(self, config):
+        torch.cuda.manual_seed(config.experiment.seed)
         self.config = config
         
         self.env = config.env.init_env()
@@ -72,7 +75,7 @@ class BaseAgent(object):
             state = self.env.reset()
             
             # Iterate through steps
-            for t in range(self.config.training.max_episode_length):
+            for t in range(1, self.config.training.max_episode_length+1):
                 timestep += 1
                 
                 transition, state, done = self.step(state)
@@ -91,6 +94,7 @@ class BaseAgent(object):
                 
                 if self.config.experiment.render:
                     self.env.render()
+                    
                 if done:
                     break
                     

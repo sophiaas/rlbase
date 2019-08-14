@@ -1,14 +1,13 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
 from torch.optim import Adam
-import torch.nn.functional as F
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 256
+HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_cross',
+    {'name': 'ppo_lightbot_cross_relu_mc100_minibatch_weightdecay',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -18,24 +17,23 @@ experiment = ExperimentConfig(
 algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
-     'weight_decay': 0.9,
-     'update_every': 20000,
+     'update_every': 10000,
      'lr_scheduler': StepLR,
-     'lr': .002,
-     'betas': (0.9, 0.999),
+     'lr': 2e-3,
+     'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax,
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
     }
 )
@@ -43,8 +41,8 @@ policy_head = FCConfig(
 value_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedHead,
      'outdim': 1
     }
@@ -53,8 +51,8 @@ value_head = FCConfig(
 body = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody
     }
 )

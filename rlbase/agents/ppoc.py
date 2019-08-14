@@ -19,9 +19,10 @@ class PPOC(BaseAgent):
     def __init__(self, config):
         super(PPOC, self).__init__(config)
         
-        self.memory = Memory(features=['reward', 'mask', 'state', 'action',
-                                       'action_logprob', 'option', 'option_logprob',
-                                       'term_prob', 'terminate', 'env_data'])
+        self.memory = Memory(features=['reward', 'mask', 'state', 'end_state', 
+                                       'action', 'action_logprob', 'option', 
+                                       'option_logprob', 'term_prob', 'terminate', 
+                                       'env_data'])
 
         self.n_options = self.config.algorithm.n_options
         
@@ -32,15 +33,14 @@ class PPOC(BaseAgent):
 
         self.optimizer = config.training.optim(self.policy.parameters(),
                                           lr=self.config.training.lr, 
-                                          betas=self.config.training.betas)
-        
-        print('pp: {}'.format(next(self.policy.parameters()).is_cuda))
-        print('po: {}'.format(next(self.policy_old.parameters()).is_cuda))
+                                          betas=self.config.training.betas,
+                                          weight_decay=config.training.weight_decay)
+        self.lr_scheduler = self.config.training.lr_scheduler(self.optimizer, 
+                                                              step_size=1, 
+                                                              gamma=config.training.lr_gamma)
         
         self.terminated = True
         self.current_option = None
-
-        self.MSELoss = nn.MSELoss()
         
     def set_network_configs(self):
         self.config.network.body.indim = self.config.env.obs_dim
@@ -115,101 +115,101 @@ class PPOC(BaseAgent):
         old_options = torch.stack(self.memory.option).to(self.device).detach()
         old_option_logprobs = torch.stack(self.memory.option_logprob).to(self.device).detach()
         
-        if self.config.algorithm.block_ent_penalty:
-            block_entropy, e = self.block_entropy(old_actions, old_masks, self.config.env.action_dim)
-            be_loss = self.config.algorithm.block_ent_coeff * block_entropy
-            print('BLOCK ENTROPY: {}'.format(block_entropy))
-            print('E: {}'.format(e))
-            print('be loss: {}'.format(be_loss))
-
-
-        
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
+            permutation = torch.randperm(old_states.shape[0]).to(self.device)
             
-            # Evaluating old actions and values :
-            action_logprobs, option_values, option_values_full, option_logprobs, \
-            option_probs, term_probs, action_dist_entropy,\
-            option_dist_entropy \
-            = self.policy.evaluate(old_states, old_actions, old_options)
+            for m in range(0, old_states.shape[0], self.config.training.minibatch_size):
+                idxs = permutation[m:m+self.config.training.minibatch_size]
             
-#             print('OPTION VALS: {}'.format(option_values.shape))
-#             print('OPTION LOG PROBS {}'.format(option_logprobs_full.shape))
-#             print('times logprobs: {}'.format(torch.sum((option_values_full * option_logprobs_full), 1).shape))
-#             print('dc: {}'.format(self.config.algorithm.dc))
-        
-            term_advantages = option_values.detach() \
-                              - torch.sum((option_values_full * option_probs), 1) \
-                              + self.config.algorithm.dc #TODO: change multiply and sum to mat mul? 
-                            #should option_vals and option_probs be detached??
-#                               - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
+                # Evaluating old actions and values :
+                action_logprobs, option_values, option_values_full, option_logprobs, \
+                option_probs, term_probs, action_dist_entropy,\
+                option_dist_entropy \
+                = self.policy.evaluate(old_states[idxs], old_actions[idxs], old_options[idxs])
 
-            
-            # Finding Action Surrogate Loss:
-            advantages = rewards - option_values.detach()
-            
-            # Finding the ratio (pi_theta / pi_theta__old):
-            ratios = torch.exp(action_logprobs - old_action_logprobs.detach())
-                               
-            surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
-                                * advantages
-                               
-            # Finding Option Surrogate Loss:
-            
-            O_ratios = torch.exp(option_logprobs - old_option_logprobs.detach())
-                               
-            O_surr1 = O_ratios * advantages
-            O_surr2 = torch.clamp(O_ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
-                                * advantages
-                               
-            actor_loss = -torch.min(surr1, surr2)
-            option_actor_loss = -torch.min(O_surr1, O_surr2)
-            critic_loss = (option_values - rewards) ** 2 
-            term_loss = term_probs * term_advantages.unsqueeze(1)
-            entropy_penalties = - (self.config.training.ent_coeff * action_dist_entropy 
-                                + self.config.training.ent_coeff * option_dist_entropy)
-            
-#             print('actor_loss {}'.format(actor_loss.shape))
-#             print('option actor loss {}'.format(option_actor_loss.shape))
-#             print('critic_loss {}'.format(critic_loss.shape))
-#             print('term loss {}'.format(term_loss.shape))
-#             print('entropy_penalties {}'.format(entropy_penalties.shape))
-            
-            loss = actor_loss + option_actor_loss + critic_loss + term_loss + entropy_penalties
-        
-            if self.config.algorithm.block_ent_penalty:
-                loss += block_entropy
+                term_advantages = option_values.detach() \
+                                  - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
+                                  + self.config.algorithm.dc #TODO: change multiply and sum to mat mul? 
+                                #should option_vals and option_probs be detached??
+    #                               - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
 
-            #TODO: separate term_loss and others (does this really matter tho?)
-            
-            # take gradient step
-            self.optimizer.zero_grad()
-            loss.mean().backward()
-            self.optimizer.step()
+
+                # Finding Action Surrogate Loss:
+                advantages = rewards[idxs] - option_values.detach()
+
+                # Finding the ratio (pi_theta / pi_theta__old):
+                ratios = torch.exp(action_logprobs - old_action_logprobs.detach()[idxs])
+
+                surr1 = ratios * advantages
+                surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 1+self.config.algorithm.clip) \
+                                    * advantages
+
+                # Finding Option Surrogate Loss:
+
+                O_ratios = torch.exp(option_logprobs - old_option_logprobs.detach()[idxs])
+
+                O_surr1 = O_ratios * advantages
+                O_surr2 = torch.clamp(O_ratios, 
+                                      1-self.config.algorithm.clip, 
+                                      1+self.config.algorithm.clip) * advantages
+
+                actor_loss = -torch.min(surr1, surr2)
+                option_actor_loss = -torch.min(O_surr1, O_surr2)
+                critic_loss = (option_values - rewards[idxs]) ** 2 
+                term_loss = term_probs * term_advantages.unsqueeze(1)
+                entropy_penalties = -(self.config.training.ent_coeff * action_dist_entropy 
+                                    + self.config.training.ent_coeff * option_dist_entropy)
+
+                loss = actor_loss + option_actor_loss + critic_loss + term_loss + entropy_penalties
+
+                if self.config.algorithm.block_ent_penalty:
+                    block_entropy, e = self.block_entropy(old_actions[idxs], 
+                                                          old_masks[idxs], 
+                                                          self.config.env.action_dim[idxs])
+                    be_loss = self.config.algorithm.block_ent_coeff * block_entropy
+                    print('BLOCK ENTROPY: {}'.format(block_entropy))
+                    print('E: {}'.format(e))
+                    print('be loss: {}'.format(be_loss))
+                    loss += block_entropy
+
+                #TODO: separate term_loss and others (does this really matter tho?)
+
+                # take gradient step
+                self.optimizer.zero_grad()
+                loss.mean().backward()
+                nn.utils.clip_grad_norm_(self.policy.parameters(), 40)
+                self.optimizer.step()
         
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
         
+        # Step learning rate
+        self.lr_scheduler.step()
+        
     def step(self, state):
         # Running policy_old:
-        start_state, action, action_logprob, option, option_logprob, \
-                    term_prob, terminate = self.policy_old.act(state, self.current_option)
+        start_state, action, action_logprob, start_option, next_option, \
+        option_logprob, term_prob, terminate = self.policy_old.act(state, self.current_option)
         state, reward, done, env_data = self.env.step(action.item())
-        self.current_option = option.data
+        
         
         step_data = {
             'reward': reward, 
             'mask': bool(not done),
             'state': start_state,
+            'end_state': state,
             'action': action,
             'action_logprob': action_logprob,
-            'option': option,
+            'option': start_option,
             'option_logprob': option_logprob,
             'term_prob': term_prob,
             'terminate': terminate,
             'env_data': env_data
         }
+        #TODO: This should fix the option-state coordination problem but verify
+        
+        self.current_option = next_option.data
         
         # Push to memory:
         self.memory.push(step_data)

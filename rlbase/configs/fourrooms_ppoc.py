@@ -6,7 +6,7 @@ from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_fourrooms',
+    {'name': 'ppoc_fourrooms_minibatch',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -23,23 +23,22 @@ algorithm = OCConfig(
 training = TrainingConfig(
     {'max_episode_length': 300,
      'max_episodes': 20000,
-     'weight_decay': 0.9, #TODO: Add weight decay (currently inactive)
      'update_every': 20000,
-     'lr_scheduler': StepLR, #TODO: add lr scheduler (currently inactive)
+     'lr_scheduler': StepLR,
+     'minibatch_size': 50,
      'lr': .002,
-     'betas': (0.9, 0.999), #TODO: unnecessary. remove
      'ent_coeff': 0.1,
      'optim': Adam,
      'cuda': True,
-     'device': 2
+     'device': 1
     }
 )
 
 actor_head = FCConfig(
     {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax, # make sure softmax happens over the right dimension
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -49,8 +48,8 @@ actor_head = FCConfig(
 option_actor_head =  FCConfig(
     {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax, # make sure softmax happens over the right dimension
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -59,8 +58,8 @@ option_actor_head =  FCConfig(
 critic_head = FCConfig(
     {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'outdim': None, # num options
 #      'n_options': None,
      'architecture': FullyConnectedHead
@@ -70,8 +69,8 @@ critic_head = FCConfig(
 termination_head = FCConfig(
     {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.softmax,
+     'activation': nn.ReLU(),
+     'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
 #      'n_options': None
@@ -81,8 +80,8 @@ termination_head = FCConfig(
 body = FCConfig(
     {'hdim': 64, 
      'nlayers': 1,
-     'activation': F.tanh,
-     'out_activation': F.tanh,
+     'activation': nn.ReLU(),
+     'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,
      'indim': None # observation dim
     }

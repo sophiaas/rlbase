@@ -49,11 +49,13 @@ class OptionCritic(nn.Module):
 
         if termination_probability > torch.rand(1).to(self.device):
             terminate = True
-            option = option_dist.sample()
+            next_option = option_dist.sample()
         else:
             terminate = False
+            next_option = option.clone()
             
-        return state, action, action_logprob, option, option_logprob, termination_probability, terminate
+        return state, action, action_logprob, option, next_option, \
+                option_logprob, termination_probability, terminate
     
     def evaluate(self, state, action, option):
         x = self.obs_transform(state)        
