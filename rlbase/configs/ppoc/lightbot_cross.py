@@ -8,7 +8,7 @@ from networks.bodies import FullyConnectedBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_cross',
+    {'name': 'ppoc_lightbot_cross_hdim512',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -27,7 +27,7 @@ training = TrainingConfig(
      'max_episodes': 20000,
      'update_every': 20000,
      'lr_scheduler': StepLR,
-     'lr': 1e-3,
+     'lr': 2e-3,
      'ent_coeff': 0.1,
      'optim': Adam,
      'cuda': True,

@@ -7,25 +7,32 @@ from networks.bodies import FullyConnectedBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_cross_relu_mc100_minibatch_weightdecay',
+    {'name': 'ppo_lightbot_cross',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
     }
 )
 
-algorithm = PPOConfig()
+algorithm = PPOConfig(
+    {'clip': 0.1,
+     'clip_norm': 40,
+     'optim_epochs': 5,
+     'l2_reg': 1e-3
+    }
+)
 
 training = TrainingConfig(
     {'max_episode_length': 100,
      'max_episodes': 20000,
      'update_every': 10000,
      'lr_scheduler': StepLR,
-     'lr': 2e-3,
+     'lr': 1e-5,
      'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 0
+     'device': 0,
+     'gamma': 1
     }
 )
 

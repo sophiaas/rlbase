@@ -18,11 +18,11 @@ experiment = ExperimentConfig(
 algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
      'update_every': 20000,
      'lr_scheduler': StepLR,
-     'lr': .002,
+     'lr': 1e-3,
      'optim': Adam,
      'cuda': True,
      'device': 1
