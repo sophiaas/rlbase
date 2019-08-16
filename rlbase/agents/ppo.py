@@ -36,17 +36,10 @@ class PPO(BaseAgent):
         # Monte Carlo estimate of state rewards:
         rewards = []
         discounted_reward = 0
-#         d = 0
-#         v = 0
-#         a = 0
         for i, reward in enumerate(reversed(self.memory.reward)):
             discounted_reward = reward \
                                 + (self.config.algorithm.gamma * discounted_reward * self.memory.mask[i])
             rewards.insert(0, discounted_reward)
-#             d = reward + self.config.algorithm.gamma * v * self.memory.mask[i] - self.memory.value[i]
-#             a = d + self.config.algorithm.gamma * self.config.algorithm.tau * a * self.memory.mask[i]
-#             v = self.memory.value[i]
-#             advantages.insert(0, a)
         return rewards
         
     def update(self):   

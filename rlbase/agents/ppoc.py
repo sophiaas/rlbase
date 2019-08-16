@@ -70,7 +70,6 @@ class PPOC(BaseAgent):
     
     def sample_blocks(self, sequence, masks, max_length, n_samples):
         #TODO: make sure masking is working
-
         blocks = {x: [] for x in range(2, max_length+1)}
         episode_ends = (masks==0).nonzero()
         for b in range(2, max_length+1):
@@ -131,7 +130,7 @@ class PPOC(BaseAgent):
                 term_advantages = option_values.detach() \
                                   - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
                                   + self.config.algorithm.dc #TODO: change multiply and sum to mat mul? 
-                                #should option_vals and option_probs be detached??
+                                # TODO: should option_vals and option_probs be detached??
     #                               - torch.sum((option_values_full.detach() * option_probs.detach()), 1) \
 
 
