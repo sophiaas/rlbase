@@ -73,6 +73,7 @@ class BaseAgent(object):
             episode_data = defaultdict(list, {'episode': int(self.episode)})
             
             state = self.env.reset()
+#             state = torch.tensor(state).to(self.device)
             
             # Iterate through steps
             for t in range(1, self.config.training.max_episode_length+1):
@@ -122,7 +123,7 @@ class BaseAgent(object):
                 avg_length = 0
                 
                 self.logger.save()
-                self.logger.save_checkpoint(self)
+#                 self.logger.save_checkpoint(self) #TODO uncomment this when done debugging
                 
                 if self.config.experiment.save_episode_data:
                     self.logger.save_episode_data()
