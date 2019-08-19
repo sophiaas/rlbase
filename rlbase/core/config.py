@@ -23,24 +23,12 @@ class AlgorithmConfig(BaseConfig):
         self.set_attributes(kwargs)
         
 
-class A2CConfig(AlgorithmConfig):
-    
-    def __init__(self, kwargs=None):
-        super().__init__()
-        self.name = 'A2C'
-#         self.init = A2C
-        self.set_attributes(kwargs)
-        
-
 class PPOConfig(AlgorithmConfig):
 
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'PPO'
-#         self.init = PPO
         self.optim_epochs = 4
-        self.value_iters = 1 #remove no longer relevant
-#         self.minibatch_size = 50 #added to training config
         self.clip = 0.2
         self.clip_norm = 40
         self.l2_reg = 1e-5
@@ -62,7 +50,6 @@ class OCConfig(PPOConfig):
         self.max_block_length = 8
         self.set_attributes(kwargs)
 
-        
         
 """Training Config"""
 
@@ -133,7 +120,7 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "100,10,-1,-1"
+        self.reward_fn = "100,-1,-1,-1"
         self.puzzle_name = "cross"
         self.set_attributes(kwargs)
         
@@ -150,7 +137,7 @@ class LightbotMinigridConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "100,10,-1,-1"
+        self.reward_fn = "10,-1,-1,-1"
         self.puzzle_name = "cross"
         self.agent_view_size = 0
         self.toggle_ontop = True

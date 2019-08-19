@@ -16,7 +16,7 @@ Base class for Deep RL agents
 class BaseAgent(object):
     
     def __init__(self, config):
-        torch.cuda.manual_seed(config.experiment.seed)
+        torch.manual_seed(config.experiment.seed)
         self.config = config
         
         self.env = config.env.init_env()
@@ -76,12 +76,16 @@ class BaseAgent(object):
             episode_data = defaultdict(list, {'episode': int(self.episode)})
             
             state = self.env.reset()
+            
             # Iterate through steps
             for t in range(1, self.config.training.max_episode_length+1):
                 timestep += 1
                 self.episode_steps += 1
                 
-                transition, state, done = self.step(state)
+                state = torch.from_numpy(state).float().to(self.config.training.device)
+                
+                with torch.no_grad():
+                    transition, state, done = self.step(state)
                 
                 for key, val in transition.items():
                     episode_data[key].append(self.convert_data(val))

@@ -17,20 +17,21 @@ class PPO(BaseAgent):
     def __init__(self, config):
         super(PPO, self).__init__(config)
         
-        self.config.network.body.indim = self.config.env.obs_dim
-        self.config.network.heads['actor'].outdim = self.config.env.action_dim
+        self.set_network_configs()
         
         self.policy = ActorCritic(config).to(self.device)
 
         self.optimizer = config.training.optim(self.policy.parameters(),
                                           lr=self.config.training.lr) 
-# weight_decay=self.config.training.weight_decay)
-        #TODO: Add back in weight decay
 
         self.lr_scheduler = self.config.training.lr_scheduler(
                                         self.optimizer, 
                                         step_size=config.training.lr_step_interval, 
                                         gamma=config.training.lr_gamma)
+        
+    def set_network_configs(self):
+        self.config.network.body.indim = self.config.env.obs_dim
+        self.config.network.heads['actor'].outdim = self.config.env.action_dim
     
     def discounted_advantages(self, rewards, masks, values):
         tau = self.config.algorithm.tau
@@ -61,37 +62,32 @@ class PPO(BaseAgent):
         return advantages, returns
         
     def update(self):   
-
         # Convert list to tensor
-        # TODO: torch.no_grad when acting. No need to detach
-        # TODO: check if eveyrthing works out using old_logprobs stored in memory
-        old_states = torch.stack(self.memory.state).to(self.device).detach()
-        old_actions = torch.stack(self.memory.action).to(self.device).detach()
-#         old_logprobs = torch.stack(self.memory.logprob).to(self.device).detach()
-        old_masks = torch.tensor(self.memory.mask).to(self.device).detach()
-        old_rewards = torch.tensor(self.memory.reward).to(self.device)
-        
+        states = torch.stack(self.memory.state).to(self.device)
+        actions = torch.stack(self.memory.action).to(self.device)
+        masks = torch.tensor(self.memory.mask).to(self.device)
+        rewards = torch.tensor(self.memory.reward).to(self.device)
+        old_logprobs = torch.stack(self.memory.logprob).to(self.device)
+
         with torch.no_grad():
-            old_logprobs, values, _ = self.policy.evaluate(old_states, old_actions)
-            advantages, returns = self.discounted_advantages(old_rewards, 
-                                                             old_masks,
-                                                             values) #0.95
+            values = self.policy.critic_forward(states)
+            advantages, returns = self.discounted_advantages(rewards, masks, values)
                 
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
-            permutation = torch.randperm(old_states.shape[0]).to(self.device)
-            for m in range(0, old_states.shape[0], self.config.training.minibatch_size):
+            permutation = torch.randperm(states.shape[0]).to(self.device)
+            
+            for m in range(0, states.shape[0], self.config.training.minibatch_size):
                 idxs = permutation[m:m+self.config.training.minibatch_size]
 
-                # Evaluate old actions and values :
+                # Evaluate actions :
                 logprobs, state_values, dist_entropy = self.policy.evaluate(
-                    old_states[idxs].detach().requires_grad_(), 
-                    old_actions[idxs].detach().float().requires_grad_())
-                # TODO: do we need grads on states and actions?
+                                                                states[idxs], 
+                                                                actions[idxs])
 
                 # Find the ratio (policy / old policy):
-                ratios = torch.exp(logprobs - old_logprobs[idxs].detach())
-        
+                ratios = torch.exp(logprobs - old_logprobs[idxs])
+
                 # Compute surrogate loss
                 surr1 = ratios * advantages[idxs]
                 surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 
@@ -116,15 +112,15 @@ class PPO(BaseAgent):
     def step(self, state):
         # Run old policy:
         env_data = self.env.get_data()
-        action, start_state, log_prob = self.policy.act(state)
-        state, reward, done, _ = self.env.step(action.item())
+        action, log_prob = self.policy.act(state)
+        next_state, reward, done, _ = self.env.step(action.item())
         if self.episode_steps == self.config.training.max_episode_length:
             done = True
 
         step_data = {
             'reward': reward, 
             'mask': bool(not done),
-            'state': start_state,
+            'state': state,
             'action': action,
             'logprob': log_prob,
             'env_data': env_data
@@ -133,4 +129,4 @@ class PPO(BaseAgent):
         # Push to memory:
         self.memory.push(step_data)
         
-        return step_data, state, done
+        return step_data, next_state, done

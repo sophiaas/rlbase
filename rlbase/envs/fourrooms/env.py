@@ -88,13 +88,12 @@ wwwwwwwwwwwww
         else: 
             reward = -1.0
             done = False
-#         if self.frame_count == self.max_count:
-#             done = True
         return state, reward, done
     
         
     def step(self, action):
         """
+        #TODO: add back in stochasticity
         The agent can perform one of four actions,
         up, down, left or right, which have a stochastic effect. With probability 2/3, the actions
         cause the agent to move one cell in the corresponding direction, and with probability 1/3,
@@ -113,7 +112,6 @@ wwwwwwwwwwwww
         data = self.get_data()
         
         return state, reward, done, data
-#         return {'next_state': state, 'reward': reward, 'done': done}
 
     def get_data(self):
         return {'coords': self.currentcell}
@@ -122,10 +120,6 @@ wwwwwwwwwwwww
         # Actions are discrete integer values
         self.n_actions = 4
         self.action_space = spaces.Discrete(self.n_actions)
-    
-#     def act(self, action):
-#         # Dummy method for compatibility
-#         return self.step(action)
 
     def get_frame_count(self):
         return self.frame_count

@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
+HDIM = 256
+
 experiment = ExperimentConfig(
     {'name': 'ppoc_fourrooms_minibatch',
      'base_dir': 'experiments/',
@@ -16,18 +18,22 @@ experiment = ExperimentConfig(
 algorithm = OCConfig(
     {'option_eps': 0.1,
      'dc': 0.1, #deliberation cost
-     'n_options': 4
+     'n_options': 4,
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 20000,
+     'update_every': 100,
      'lr_scheduler': StepLR,
      'minibatch_size': 50,
-     'lr': .002,
-     'ent_coeff': 0.1,
+     'lr': 1e-3,
+     'lr_step_interval': 1,
+     'lr_gamma': 0.9,
+     'ent_coeff': 0.1, #Not currently used
      'optim': Adam,
      'cuda': True,
      'device': 1
@@ -35,7 +41,7 @@ training = TrainingConfig(
 )
 
 actor_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
@@ -46,7 +52,7 @@ actor_head = FCConfig(
 )
 
 option_actor_head =  FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
@@ -56,10 +62,10 @@ option_actor_head =  FCConfig(
 )
 
 critic_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
+     'out_activation': None,
      'outdim': None, # num options
 #      'n_options': None,
      'architecture': FullyConnectedHead
@@ -67,7 +73,7 @@ critic_head = FCConfig(
 )
 
 termination_head = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0),
@@ -78,7 +84,7 @@ termination_head = FCConfig(
 )
 
 body = FCConfig(
-    {'hdim': 64, 
+    {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),

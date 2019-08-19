@@ -2,9 +2,6 @@ import os
 import argparse
 from agents import PPO, PPOC
 import torch
-from torch.utils.tensorboard import SummaryWriter
-
-
 
 parser = argparse.ArgumentParser(description='Lightbot')
 

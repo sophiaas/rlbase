@@ -15,73 +15,77 @@ class OptionCritic(nn.Module):
         self.n_options = config.algorithm.n_options
         self.device = self.config.training.device
         
-        self.obs_transform = self.config.network.init_body()
-        # actor = linear3d(hdim, n_options, n_actions)
-        # critic = linear(hdim, n_options)
-        # termination = linear(hdim, n_options)
+        #TODO: Make nicer
+        self.actor_obs_transform = self.config.network.init_body().to(self.device)
+        self.option_actor_obs_transform = self.config.network.init_body().to(self.device)
+        self.critic_obs_transform = self.config.network.init_body().to(self.device)
+        self.term_obs_transform = self.config.network.init_body().to(self.device)
+
         self.actor, self.option_actor, self.critic, self.termination = self.config.network.init_heads()
         
     def forward(self):
         raise NotImplementedError
         
-    def act(self, state, option):        
-        state = torch.from_numpy(state).float().to(self.device)
-        x = self.obs_transform(state)
+    def actor_forward(self, state, option):
+        x = self.actor_obs_transform(state)  
+        probs = self.actor(x, option)
+        dist = Categorical(probs.to(self.device)) #TODO: WEIRD THAT OUTPUT OF ACTOR IS CONVERTED TO CPU!!!
+        return dist
+    
+    def option_actor_forward(self, state):
+        x = self.actor_obs_transform(state) 
+        probs = self.option_actor(x)
+        dist = Categorical(probs)
+        return dist
+    
+    def term_forward(self, state, option=None):
+        x = self.term_obs_transform(state) 
+        term_probs = self.termination(x)
+        if option is not None:
+            term_probs = torch.cat([torch.index_select(a, 0, i) for a, i in zip(term_probs, option)])
+        return term_probs
         
-        option_probs = self.option_actor(x)
-        option_dist = Categorical(option_probs)
+    def critic_forward(self, state, option=None):
+        x = self.critic_obs_transform(state)   
+        option_value = torch.squeeze(self.critic(x))
+        if option is not None:
+            # TODO: do this in the linear3d network also
+            option_value = torch.cat([torch.index_select(a, 0, i) for a, i in zip(option_value, option)]) 
+        return option_value
+    
+    def evaluate_action(self, state, action, option):
+        dist = self.actor_forward(state.to(self.device), option.to(self.device))
+        log_prob = dist.log_prob(action)
+        # TODO: WHY MUST ACTION BE ON CPU?!
+        return log_prob
+    
+    def evaluate_option(self, state, option):
+        dist = self.option_actor_forward(state)
+        log_prob = dist.log_prob(option)
+        return log_prob
+    
+    def option_logprobs_full(self, state):
+        full = torch.zeros((state.shape[0], self.n_options)).to(self.device)
+        for o in range(self.n_options):
+            full[:, o] = self.evaluate_option(state, torch.tensor(o).to(self.device))
+        return full
+        
+    def act(self, state, option):  
+        option_dist = self.option_actor_forward(state)
         if option is None:
             option = option_dist.sample()
-        option_logprob = option_dist.log_prob(option)
+        option_log_prob = option_dist.log_prob(option)
         
-        termination_probability = self.termination(x)[option.data]
-
-#             option_dist = self.critic(x)
-#             if np.random.uniform() > self.config.algorithm.option_eps:
-#                 option = option_dist.argmax()
-#             else:
-#                 option = np.random.randint(self.config.algorithm.n_options)
-            
-        action_probs = self.actor(x, option)
-        action_dist = Categorical(action_probs)
+        action_dist = self.actor_forward(state, option)
         action = action_dist.sample()
-        action_logprob = action_dist.log_prob(action)
-
-        if termination_probability > torch.rand(1).to(self.device):
+        action_log_prob = action_dist.log_prob(action)
+        
+        term_prob = self.term_forward(state)
+        if term_prob[option.data] > torch.rand(1).to(self.device):
             terminate = True
             next_option = option_dist.sample()
         else:
             terminate = False
             next_option = option.clone()
             
-        return state, action, action_logprob, option, next_option, \
-                option_logprob, termination_probability, terminate
-    
-    def evaluate(self, state, action, option):
-        x = self.obs_transform(state)        
-        
-        action_probs = self.actor(x, option).to(self.device) #Shouldn't have to put on cuda again
-        action_dist = Categorical(action_probs)
-        action_logprob = action_dist.log_prob(action)
-        action_dist_entropy = action_dist.entropy()
-        
-        option_probs = self.option_actor(x)
-        option_dist = Categorical(option_probs)
-        
-        option_dist_entropy = option_dist.entropy()
-        
-        option_value_full = torch.squeeze(self.critic(x))
-        option_value = torch.cat([torch.index_select(a, 0, i) for a, i in zip(option_value_full, option)]) # TODO: do this in the linear3d network also
-
-        option_logprob = option_dist.log_prob(option)
-#         option_logprob_full = torch.zeros((state.shape[0], self.n_options)).to(self.device)
-#         for o in range(self.n_options):
-#             vec = torch.ones((state.shape[0]), dtype=torch.int64).to(self.device) * o
-#             option_logprob_full[:, o] = option_dist.log_prob(vec)
-        
-#         termination_probability = self.termination(x)[option]
-        termination_probability = torch.cat([torch.index_select(a, 0, i) for a, i in zip(self.termination(x), option)])
-        
-        return action_logprob, option_value, option_value_full, option_logprob, \
-                option_probs, termination_probability, action_dist_entropy, \
-                option_dist_entropy
+        return action, option, next_option, term_prob, terminate, action_log_prob, option_log_prob
