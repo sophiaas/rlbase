@@ -32,7 +32,10 @@ class PPO(BaseAgent):
                                         step_size=config.training.lr_step_interval, 
                                         gamma=config.training.lr_gamma)
     
-    def discounted_advantages(self, rewards, masks, values, gamma, tau):
+    def discounted_advantages(self, rewards, masks, values):
+        tau = self.config.algorithm.tau
+        gamma = self.config.algorithm.gamma
+        
         shape = values.shape
         returns = torch.zeros(shape).to(self.device)
         deltas = torch.zeros(shape).to(self.device)
@@ -72,9 +75,7 @@ class PPO(BaseAgent):
             old_logprobs, values, _ = self.policy.evaluate(old_states, old_actions)
             advantages, returns = self.discounted_advantages(old_rewards, 
                                                              old_masks,
-                                                             values,
-                                                        self.config.training.gamma,
-                                                        self.config.training.tau) #0.95
+                                                             values) #0.95
                 
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
@@ -114,7 +115,7 @@ class PPO(BaseAgent):
         
     def step(self, state):
         # Run old policy:
-        env_data = self.env.raw_state
+        env_data = self.env.get_data()
         action, start_state, log_prob = self.policy.act(state)
         state, reward, done, _ = self.env.step(action.item())
         if self.episode_steps == self.config.training.max_episode_length:

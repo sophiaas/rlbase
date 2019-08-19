@@ -77,9 +77,9 @@ class TrainingConfig(BaseConfig):
         self.minibatch_size = 50
         self.max_episode_length = 100
         self.max_episodes = 20000
-        self.update_every = 2000
+        self.update_every = 100
         self.lr_gamma = 0.9
-        self.lr_step_interval = 5
+        self.lr_step_interval = 1
         self.action_var = 0.5 # for continuous action spaces
         self.cuda = True
         self.device = 1

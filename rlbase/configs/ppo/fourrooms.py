@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 64
+HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ppo_fourooms',
@@ -15,19 +15,22 @@ experiment = ExperimentConfig(
     }
 )
 
-algorithm = PPOConfig()
+algorithm = PPOConfig(
+    {'gamma': 0.99,
+     'tau': 0.95
+    }
+)
 
 training = TrainingConfig(
     {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 10000,
+     'update_every': 100,
      'lr_scheduler': StepLR,
-     'lr': 3e-5,
+     'lr': 1e-3,
      'lr_gamma': 0.9,
      'optim': Adam,
      'cuda': True,
-     'device': 3,
-     'gamma': 0.99
+     'device': 1,
     }
 )
 

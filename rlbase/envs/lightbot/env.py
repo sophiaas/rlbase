@@ -123,6 +123,9 @@ class Lightbot(gym.Env):
         self.done = False
         return self.state
 
+    def get_data(self):
+        return self.raw_state
+    
     def step(self, action):
         # actions: {0: 'light', 1: 'jump', 2: 'walk', 3: 'turn_r', 4: 'turn_l'}
         # If already terminal, then don't do anything
@@ -136,7 +139,8 @@ class Lightbot(gym.Env):
                       'reward': copy.deepcopy(self.reward), 
                       'done': copy.deepcopy(self.done)}
 #         return transition
-        return copy.deepcopy(self.state), copy.deepcopy(self.reward), copy.deepcopy(self.done), self.raw_state
+        data = self.get_data()
+        return copy.deepcopy(self.state), copy.deepcopy(self.reward), copy.deepcopy(self.done), data
 
     def make_move(self, state, action):
         state = copy.deepcopy(state)

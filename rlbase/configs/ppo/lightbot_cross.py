@@ -19,7 +19,9 @@ algorithm = PPOConfig(
     {'clip': 0.1,
      'clip_norm': 40,
      'optim_epochs': 5,
-     'l2_reg': 1e-5
+     'l2_reg': 1e-5,
+     'gamma': 0.95,
+     'tau': 0.95
     }
 )
 
@@ -35,8 +37,7 @@ training = TrainingConfig(
      'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1,
-     'gamma': 0.99 #0.9
+     'device': 1
     }
 )
 
@@ -76,7 +77,7 @@ network = NetworkConfig(
 
 env = LightbotConfig(
     {'puzzle_name': 'cross',
-     'reward_fn': '10,10,-1,-1'
+     'reward_fn': '10,10,0,0'
     }
 )
 

@@ -110,8 +110,13 @@ wwwwwwwwwwwww
         frame_count = 1
         self.frame_count += frame_count
         
-        return state, reward, done, {'coords': self.currentcell}
+        data = self.get_data()
+        
+        return state, reward, done, data
 #         return {'next_state': state, 'reward': reward, 'done': done}
+
+    def get_data(self):
+        return {'coords': self.currentcell}
     
     def set_action_space(self):
         # Actions are discrete integer values

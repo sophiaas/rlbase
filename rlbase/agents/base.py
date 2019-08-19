@@ -76,7 +76,6 @@ class BaseAgent(object):
             episode_data = defaultdict(list, {'episode': int(self.episode)})
             
             state = self.env.reset()
-#             state = torch.tensor(state).to(self.device)
             # Iterate through steps
             for t in range(1, self.config.training.max_episode_length+1):
                 timestep += 1
@@ -97,16 +96,10 @@ class BaseAgent(object):
                     break
                 
             if self.episode % self.config.training.update_every == 0:
-                print('episode: {}'.format(self.episode))
                 self.update()
                 self.memory.clear()
-#                 timestep = 0
-
-
                     
             # Update logging variables
-
-            
             self.update_running(episode_reward, t)
                     
             self.logger.push(self.get_summary())
