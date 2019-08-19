@@ -88,12 +88,6 @@ class BaseAgent(object):
                     episode_data[key].append(self.convert_data(val))
                     
                 episode_reward += transition['reward']
-                
-                if timestep % self.config.training.update_every == 0:
-                    self.update()
-                    self.memory.clear()
-                    timestep = 0
-
                 running_reward += transition['reward']
                 
                 if self.config.experiment.render:
@@ -101,6 +95,14 @@ class BaseAgent(object):
                     
                 if done:
                     break
+                
+            if self.episode % self.config.training.update_every == 0:
+                print('episode: {}'.format(self.episode))
+                self.update()
+                self.memory.clear()
+#                 timestep = 0
+
+
                     
             # Update logging variables
 
@@ -128,7 +130,7 @@ class BaseAgent(object):
                 avg_length = 0
                 
                 self.logger.save()
-#                 self.logger.save_checkpoint(self) #TODO uncomment this when done debugging
+                self.logger.save_checkpoint(self)
                 
                 if self.config.experiment.save_episode_data:
                     self.logger.save_episode_data()
