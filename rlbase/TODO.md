@@ -3,12 +3,17 @@
 1. is PPOC really working?
 2. Running rewards - what is happening?
 3. Is the option-state match fix working?
+4. Is PPO really working?
 
 ## Refactoring:
 
-1. Configs and train files
-2. Add ability to call train files with arguments
+~~1. Configs and train files~~
+~~2. Add ability to call train files with arguments~~
 3. Consolidate PPO and PPOC
+
+## Optimizing:
+What else can I add to get performance on lightbot cross up to standard?
+1. Anneal PPO epochs
 
 
 ## Completed:
