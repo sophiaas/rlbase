@@ -18,14 +18,16 @@ experiment = ExperimentConfig(
 algorithm = PPOConfig()
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 2000,
+     'update_every': 10000,
      'lr_scheduler': StepLR,
      'lr': 3e-5,
+     'lr_gamma': 0.9,
      'optim': Adam,
      'cuda': True,
-     'device': 3
+     'device': 3,
+     'gamma': 0.99
     }
 )
 
@@ -42,7 +44,7 @@ value_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
+     'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
     }

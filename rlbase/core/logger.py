@@ -45,7 +45,7 @@ class Logger(object):
         
     def save_config(self):
         with open(self.logdir + 'config.p', 'wb') as f:
-            pickle.dump(self.config, f)
+            pickle.dump(self.config, f, protocol=pickle.HIGHEST_PROTOCOL)
             
     def load_config(self):
         with open(self.logdir + 'config.p', 'rb') as f:
