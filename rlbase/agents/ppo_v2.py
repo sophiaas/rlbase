@@ -24,13 +24,13 @@ class PPO(BaseAgent):
         self.policy_old = ActorCritic(config).to(self.device)
 
         self.optimizer = config.training.optim(self.policy.parameters(),
-                                          lr=self.config.training.lr, 
-                                          betas=self.config.training.betas,
-                                          weight_decay=self.config.training.weight_decay)
+                                          lr=self.config.training.lr)
+#                                           betas=self.config.training.betas,
+#                                           weight_decay=self.config.training.weight_decay)
 
-        self.lr_scheduler = self.config.training.lr_scheduler(self.optimizer, 
-                                                              step_size=1, 
-                                                              gamma=config.training.lr_gamma)
+#         self.lr_scheduler = self.config.training.lr_scheduler(self.optimizer, 
+#                                                               step_size=1, 
+#                                                               gamma=config.training.lr_gamma)
         
 #     def discount(self):
 #         # Monte Carlo estimate of state rewards:
@@ -79,14 +79,14 @@ class PPO(BaseAgent):
         # Convert list to tensor
         old_states = torch.stack(self.memory.state).to(self.device).detach()
         old_actions = torch.stack(self.memory.action).to(self.device).detach()
-#         old_logprobs = torch.stack(self.memory.logprob).to(self.device).detach()
+        old_logprobs = torch.stack(self.memory.logprob).to(self.device).detach()
         old_masks = torch.tensor(self.memory.mask).to(self.device).detach()
         old_rewards = torch.tensor(self.memory.reward).to(self.device)
         
         with torch.no_grad():
             _, values, _ = self.policy.evaluate(old_states, old_actions)
             advantages, returns = self.discounted_advantages(old_rewards, old_masks, 
-                                                                 values, 0.99, 0.95)
+                                                                 values, self.config.training.gamma, 0.95)
         
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
@@ -122,17 +122,17 @@ class PPO(BaseAgent):
                 self.optimizer.zero_grad()
                 loss.mean().backward()
                 nn.utils.clip_grad_norm_(self.policy.parameters(), 40)
-                self.optimizer.step()
+            self.optimizer.step()
         
         # Step learning rate
         self.lr_scheduler.step()
         
         # Copy new weights into old policy:
-        self.policy_old.load_state_dict(self.policy.state_dict())
+#         self.policy_old.load_state_dict(self.policy.state_dict())
         
     def step(self, state):
         # Run old policy:
-        env_data = env.raw_state
+        env_data = self.env.raw_state
         action, start_state, log_prob = self.policy_old.act(state)
         state, reward, done, _ = self.env.step(action.item())
         if self.timestep == self.config.training.max_episode_length:

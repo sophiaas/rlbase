@@ -71,9 +71,14 @@ class FullyConnectedHead(BaseHead):
         self.network.append(nn.Linear(self.hdim, self.outdim))
             
     def forward(self, x):
-        for layer in self.network[:len(self.network)-1]:
-            x = self.activation(layer(x))
-        x = self.config.out_activation(self.network[-1](x))
+        if len(self.network) > 1:
+            for layer in self.network[:len(self.network)-1]:
+                x = self.activation(layer(x))
+        else:
+            if self.config.out_activation is not None:
+                x = self.config.out_activation(self.network[-1](x))
+            else:
+                x = self.network[-1](x)
         return x
     
     

@@ -7,7 +7,7 @@ from networks.bodies import FullyConnectedBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_cross',
+    {'name': 'ppo_lightbot_debug1',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'log_interval': 20,
@@ -24,13 +24,12 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
+    {'max_episode_length': 50,
      'max_episodes': 20000,
-     'update_every': 100,
+     'update_every': 3000,
      'lr_scheduler': StepLR,
      'lr': 1e-3, #1e-3
      'lr_gamma': 0.9,
-     'lr_step_interval': 1,
      'weight_decay': 1e-5, #1e-5
      'minibatch_size': 50,
      'optim': Adam,
@@ -75,7 +74,7 @@ network = NetworkConfig(
 )
 
 env = LightbotConfig(
-    {'puzzle_name': 'cross',
+    {'puzzle_name': 'debug1',
      'reward_fn': '10,10,-1,-1'
     }
 )

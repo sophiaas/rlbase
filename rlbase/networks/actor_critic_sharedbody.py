@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.distributions import Categorical, MultivariateNormal
 import gym
-import numpy as np
 
 class ActorCritic(nn.Module):
     def __init__(self, config):
@@ -10,9 +9,9 @@ class ActorCritic(nn.Module):
         self.config = config
         
         # Shared body
-        self.obs_transform_actor = self.config.network.init_body()
-        self.obs_transform_critic = self.config.network.init_body()
-#         self.obs_transform = self.config.network.init_body()
+#         self.obs_transform_actor = self.config.network.init_body()
+#         self.obs_transform_critic = self.config.network.init_body()
+        self.obs_transform = self.config.network.init_body()
         
         
         self.actor, self.critic = self.config.network.init_heads()
@@ -22,8 +21,8 @@ class ActorCritic(nn.Module):
     
     def act(self, state):
         state = torch.from_numpy(state).float().to(self.config.training.device)
-        x = self.obs_transform_actor(state)
-#         x = self.obs_transform(state)
+#         x = self.obs_transform_actor(state)
+        x = self.obs_transform(state)
         
         if type(self.config.env.action_space) == gym.spaces.Discrete:
             action_probs = self.actor(x)
@@ -43,8 +42,8 @@ class ActorCritic(nn.Module):
     
     
     def evaluate(self, state, action):
-        x = self.obs_transform_actor(state)
-#         x = self.obs_transform(state)
+#         x = self.obs_transform_actor(state)
+        x = self.obs_transform(state)
         
         #TODO: consolidate this and the section in act()
         
@@ -63,8 +62,8 @@ class ActorCritic(nn.Module):
         action_logprobs = dist.log_prob(action)
         dist_entropy = dist.entropy()
 
-        y = self.obs_transform_critic(state)
-        state_value = self.critic(y)
+#         y = self.obs_transform_actor(state)
+        state_value = self.critic(x)
         return action_logprobs, torch.squeeze(state_value), dist_entropy
 
 # import torch

@@ -33,7 +33,8 @@ class BaseAgent(object):
         self.running_rewards = None
         self.running_moves = None
         
-        self.episode = 0
+        self.episode = 1
+        self.episode_steps = 0
 
     def convert_data(self, x):
         if type(x) == torch.Tensor:
@@ -66,18 +67,20 @@ class BaseAgent(object):
         running_reward = 0
         avg_length = 0
         timestep = 0
+        self.episode_steps = 0
             
         # Iterate through episodes
         for i_episode in range(1, self.config.training.max_episodes+1):
             episode_reward = 0
+            self.episode_steps = 0
             episode_data = defaultdict(list, {'episode': int(self.episode)})
             
             state = self.env.reset()
 #             state = torch.tensor(state).to(self.device)
-            
             # Iterate through steps
             for t in range(1, self.config.training.max_episode_length+1):
                 timestep += 1
+                self.episode_steps += 1
                 
                 transition, state, done = self.step(state)
                 
@@ -100,8 +103,7 @@ class BaseAgent(object):
                     break
                     
             # Update logging variables
-            self.episode += 1
-            avg_length += t
+
             
             self.update_running(episode_reward, t)
                     
@@ -109,6 +111,9 @@ class BaseAgent(object):
             
             if self.config.experiment.save_episode_data:
                 self.logger.push_episode_data(episode_data)
+                
+            self.episode += 1
+            avg_length += t
             
             # Logging
             if i_episode % self.config.experiment.log_interval == 0:
