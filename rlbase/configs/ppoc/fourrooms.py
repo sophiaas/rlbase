@@ -32,7 +32,7 @@ training = TrainingConfig(
      'minibatch_size': 50,
      'lr': 1e-3,
      'lr_step_interval': 1,
-     'lr_gamma': 0.9,
+     'lr_gamma': 0.8,
      'ent_coeff': 0.1, #Not currently used
      'optim': Adam,
      'cuda': True,
