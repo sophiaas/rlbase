@@ -19,7 +19,7 @@ class AlgorithmConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
         self.gamma = 0.99
-        self.tau = 0.95
+        self.tau = 0.95 #lambda
         self.set_attributes(kwargs)
         
 
@@ -88,6 +88,7 @@ class ExperimentConfig(BaseConfig):
         self.name = ""
         self.seed = 543
         self.log_interval = 100
+        self.every_n_episodes = 100
         self.save_episode_data = False
         self.base_dir = 'experiments/'
         self.render = False

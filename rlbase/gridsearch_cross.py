@@ -39,7 +39,8 @@ def get_chunks(iterable, chunks=12):
 def worker(grid):
     for a in grid:
         config = all_configs[args.config]
-        config.training.max_count = 5000
+        config.training.max_episodes = 7500
+        config.experiment.every_n_episodes = 100
         config.training.lr = a[0]
         config.training.lr_gamma = a[1]
         config.algorithm.gamma = a[2]

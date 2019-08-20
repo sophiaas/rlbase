@@ -108,7 +108,7 @@ class BaseAgent(object):
                     
             self.logger.push(self.get_summary())
             
-            if self.config.experiment.save_episode_data:
+            if self.config.experiment.save_episode_data and self.episode % self.experiment.every_n_episodes == 0:
                 self.logger.push_episode_data(episode_data)
                 
             self.episode += 1

@@ -11,6 +11,7 @@ experiment = ExperimentConfig(
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'log_interval': 100,
+     'every_n_episodes': 100,
      'debug': True
     }
 )
