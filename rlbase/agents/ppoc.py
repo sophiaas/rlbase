@@ -149,56 +149,58 @@ class PPOC(BaseAgent):
             
             for m in range(0, states.shape[0], self.config.training.minibatch_size):
                 idxs = permutation[m:m+self.config.training.minibatch_size]
+                #TODO: make this less arbitrary
+                if idxs.shape[0] > self.config.training.minibatch_size / 5:
                             
-                # Evaluating old actions and values :
-                action_logprobs = self.policy.evaluate_action(states[idxs], actions[idxs], options[idxs])
-                option_logprobs = self.policy.evaluate_option(states[idxs], options[idxs])
-                option_values = self.policy.critic_forward(states[idxs], options[idxs])
-                term_probs = self.policy.term_forward(states[idxs], options[idxs])
+                    # Evaluating old actions and values :
+                    action_logprobs = self.policy.evaluate_action(states[idxs], actions[idxs], options[idxs])
+                    option_logprobs = self.policy.evaluate_option(states[idxs], options[idxs])
+                    option_values = self.policy.critic_forward(states[idxs], options[idxs])
+                    term_probs = self.policy.term_forward(states[idxs], options[idxs])
 
-                # TODO: Should term advantages be computed inside or outside loop?
+                    # TODO: Should term advantages be computed inside or outside loop?
 
-                # Finding Action Surrogate Loss:
+                    # Finding Action Surrogate Loss:
 
-                ratios = torch.exp(action_logprobs - old_action_log_probs[idxs])
-                surr1 = ratios * advantages[idxs]
-                surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 
-                                    1+self.config.algorithm.clip) * advantages[idxs]
+                    ratios = torch.exp(action_logprobs - old_action_log_probs[idxs])
+                    surr1 = ratios * advantages[idxs]
+                    surr2 = torch.clamp(ratios, 1-self.config.algorithm.clip, 
+                                        1+self.config.algorithm.clip) * advantages[idxs]
 
-                # Finding Option Surrogate Loss:
-                O_ratios = torch.exp(option_logprobs - old_option_log_probs[idxs])
-                O_surr1 = O_ratios * advantages[idxs]
-                O_surr2 = torch.clamp(O_ratios, 
-                                      1-self.config.algorithm.clip, 
-                                      1+self.config.algorithm.clip) * advantages[idxs]
+                    # Finding Option Surrogate Loss:
+                    O_ratios = torch.exp(option_logprobs - old_option_log_probs[idxs])
+                    O_surr1 = O_ratios * advantages[idxs]
+                    O_surr2 = torch.clamp(O_ratios, 
+                                          1-self.config.algorithm.clip, 
+                                          1+self.config.algorithm.clip) * advantages[idxs]
 
-                actor_loss = -torch.min(surr1, surr2)
-                option_actor_loss = -torch.min(O_surr1, O_surr2)
-                critic_loss = (option_values - returns[idxs]) ** 2 
-                term_loss = term_probs * term_advantages.unsqueeze(1)[idxs]
-                
-#                 entropy_penalties = -(self.config.training.ent_coeff * action_dist_entropy 
-#                                     + self.config.training.ent_coeff * option_dist_entropy)
+                    actor_loss = -torch.min(surr1, surr2)
+                    option_actor_loss = -torch.min(O_surr1, O_surr2)
+                    critic_loss = (option_values - returns[idxs]) ** 2 
+                    term_loss = term_probs * term_advantages.unsqueeze(1)[idxs]
 
-                loss = actor_loss + option_actor_loss + critic_loss + term_loss
+    #                 entropy_penalties = -(self.config.training.ent_coeff * action_dist_entropy 
+    #                                     + self.config.training.ent_coeff * option_dist_entropy)
 
-                if self.config.algorithm.block_ent_penalty:
-                    block_entropy, e = self.block_entropy(actions[idxs], 
-                                                          masks[idxs], 
-                                                          self.config.env.action_dim[idxs])
-                    be_loss = self.config.algorithm.block_ent_coeff * block_entropy
-                    print('BLOCK ENTROPY: {}'.format(block_entropy))
-                    print('E: {}'.format(e))
-                    print('be loss: {}'.format(be_loss))
-                    loss += block_entropy
+                    loss = actor_loss + option_actor_loss + critic_loss + term_loss
 
-                #TODO: separate term_loss and others (does this really matter tho?)
+                    if self.config.algorithm.block_ent_penalty:
+                        block_entropy, e = self.block_entropy(actions[idxs], 
+                                                              masks[idxs], 
+                                                              self.config.env.action_dim[idxs])
+                        be_loss = self.config.algorithm.block_ent_coeff * block_entropy
+                        print('BLOCK ENTROPY: {}'.format(block_entropy))
+                        print('E: {}'.format(e))
+                        print('be loss: {}'.format(be_loss))
+                        loss += block_entropy
 
-                # take gradient step
-                self.optimizer.zero_grad()
-                loss.mean().backward()
-                nn.utils.clip_grad_norm_(self.policy.parameters(), 40)
-                self.optimizer.step()
+                    #TODO: separate term_loss and others (does this really matter tho?)
+
+                    # take gradient step
+                    self.optimizer.zero_grad()
+                    loss.mean().backward()
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), 40)
+                    self.optimizer.step()
         
         # Step learning rate
         self.lr_scheduler.step()
