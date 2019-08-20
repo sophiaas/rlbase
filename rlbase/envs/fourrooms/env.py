@@ -76,9 +76,9 @@ wwwwwwwwwwwww
         nextcell = tuple(self.currentcell + self.directions[action])
         if not self.occupancy[nextcell]:
             self.currentcell = nextcell
-            if self.rng.uniform() < 1/3.:
-                empty_cells = self.empty_around(self.currentcell)
-                self.currentcell = empty_cells[self.rng.randint(len(empty_cells))]
+#             if self.rng.uniform() < 1/3.:
+#                 empty_cells = self.empty_around(self.currentcell)
+#                 self.currentcell = empty_cells[self.rng.randint(len(empty_cells))]
 
         raw_state = self.tostate[self.currentcell]
         state = self.index_to_onehot(raw_state, self.observation_space.n)
@@ -93,7 +93,7 @@ wwwwwwwwwwwww
         
     def step(self, action):
         """
-        #TODO: add back in stochasticity
+        #TODO: add back in stochasticity?
         The agent can perform one of four actions,
         up, down, left or right, which have a stochastic effect. With probability 2/3, the actions
         cause the agent to move one cell in the corresponding direction, and with probability 1/3,
