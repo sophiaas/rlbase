@@ -10,7 +10,7 @@ experiment = ExperimentConfig(
     {'name': 'ppo_lightbot_cross',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 20,
+     'log_interval': 100,
      'debug': True
     }
 )
@@ -27,7 +27,7 @@ algorithm = PPOConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 100,
-     'max_episodes': 20000,
+     'max_episodes': 10000,
      'update_every': 100,
      'lr_scheduler': StepLR,
      'lr': 1e-3, #1e-3
@@ -37,7 +37,7 @@ training = TrainingConfig(
      'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
@@ -77,7 +77,7 @@ network = NetworkConfig(
 
 env = LightbotConfig(
     {'puzzle_name': 'cross',
-     'reward_fn': '10,10,0,0'
+     'reward_fn': '10,10,-1,-1'
     }
 )
 
