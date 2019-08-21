@@ -81,8 +81,8 @@ class Lightbot(MiniGridEnv):
         agent_start_dir=None,
         max_steps=100,
         reward_fn='100,-1,-1,-1',
-        toggle_ontop=False,
-        hierarchical_args=None
+        toggle_ontop=False
+#         hierarchical_args=None
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
@@ -99,7 +99,7 @@ class Lightbot(MiniGridEnv):
         self.light_idxs = puzzles[puzzle_name]['light_idxs']
         self.reward_fn = [float(x) for x in reward_fn.split(',')]
         self.toggle_ontop = toggle_ontop
-        self.hierarchical_args = hierarchical_args
+#         self.hierarchical_args = hierarchical_args
         self.name = 'lightbot_minigrid'
         
         super().__init__(
@@ -113,10 +113,11 @@ class Lightbot(MiniGridEnv):
         
         self.actions = LightbotEnv.Actions
         
-        if hierarchical_args is not None:
-            self.set_action_space(hierarchical_args['num_h_actions'])
-        else:
-            self.set_action_space(0)
+#         if hierarchical_args is not None:
+#             self.set_action_space(hierarchical_args['num_h_actions'])
+#         else:
+#             self.set_action_space(0)
+        self.action_space = spaces.Discrete(self.n_actions+self.num_h_actions)
         # Action enumeration for this environment
         
         print('action space: {}'.format(self.action_space))
@@ -193,37 +194,42 @@ class Lightbot(MiniGridEnv):
             reward = self.reward_fn[0]
             done = True
         return reward, done
+    
+    def get_data(self):
+        data = {
+            'coords': self.agent_pos,
+            'direction': self.agent_dir,
+            'light': 1 if curr_cell.type == 'light' else 0
+            'light_on': 1 if curr_cell.is_on else 0
+        }
+        return data
 
     def step(self, action):
         reward = self.reward_fn[-1]
         done = False     
 
-        # Rotate left
-#         if type(action) == torch.Tensor:
-#             action = action.item()
-            
-        if action < self.n_actions:
-            reward, done = self.make_move(action)
-            self.step_count += 1
-            frame_update = 1
+#         if action < self.n_actions:
+        reward, done = self.make_move(action)
+        self.step_count += 1
+        frame_update = 1
         
-        else:
-            h_action = self.h_actions[action]
-            reward = []
-            h_action = self.uncompress_h_action(h_action)
-            i = 0
-            frame_update = len(h_action)
-            for a in h_action:
-                i += 1
-                self.step_count += 1
-                r, done = self.make_move(a)
-                reward.append(r)
-                if self.step_count >= self.max_steps:
-                    done = True
-                if done:
-#                     self.reward = reward
-                    frame_update = i
-                    break
+#         else:
+#             h_action = self.h_actions[action]
+#             reward = []
+#             h_action = self.uncompress_h_action(h_action)
+#             i = 0
+#             frame_update = len(h_action)
+#             for a in h_action:
+#                 i += 1
+#                 self.step_count += 1
+#                 r, done = self.make_move(a)
+#                 reward.append(r)
+#                 if self.step_count >= self.max_steps:
+#                     done = True
+#                 if done:
+# #                     self.reward = reward
+#                     frame_update = i
+#                     break
             
 #             self.reward = reward
 
@@ -232,33 +238,34 @@ class Lightbot(MiniGridEnv):
         if done:
             self.episode += 1
         obs = self.gen_obs()
-        return obs, reward, done, frame_update
+        data = self.get_data()
+        return obs, reward, done, data
 
-    def uncompress_h_action(self, h_action):
-        primitive = False if np.any([x >= self.n_actions for x in h_action]) else True
-        while not primitive:
-            primitive_sequence = []
-            for x in h_action:
-                if x < self.n_actions:
-                    primitive_sequence.append(x)
-                else: 
-                    primitive_sequence += self.h_actions[x]
-            h_action = primitive_sequence
-            primitive = False if np.any([x >= self.n_actions for x in h_action]) else True
-        return h_action
+#     def uncompress_h_action(self, h_action):
+#         primitive = False if np.any([x >= self.n_actions for x in h_action]) else True
+#         while not primitive:
+#             primitive_sequence = []
+#             for x in h_action:
+#                 if x < self.n_actions:
+#                     primitive_sequence.append(x)
+#                 else: 
+#                     primitive_sequence += self.h_actions[x]
+#             h_action = primitive_sequence
+#             primitive = False if np.any([x >= self.n_actions for x in h_action]) else True
+#         return h_action
     
-    def set_action_space(self, num_h_actions=0):
-        # Actions are discrete integer values
-        self.n_actions = len(self.actions)
-        self.num_h_actions = num_h_actions
-        if self.hierarchical_args is not None:
-            if self.hierarchical_args['h_dictionary_path'] is not None:
-                path = self.hierarchical_args['h_dictionary_path']
-                self.h_actions = pickle.load(open('ppo/dictionaries/'+path+'.p', "rb" ))
-            else:
-                self.h_actions = {a:[] for a in range(self.n_actions, self.num_h_actions+self.n_actions)}
-        self.open_h_action_index = self.n_actions
-        self.action_space = spaces.Discrete(self.n_actions+self.num_h_actions)
+#     def set_action_space(self, num_h_actions=0):
+#         # Actions are discrete integer values
+#         self.n_actions = len(self.actions)
+#         self.num_h_actions = num_h_actions
+# #         if self.hierarchical_args is not None:
+# #             if self.hierarchical_args['h_dictionary_path'] is not None:
+# #                 path = self.hierarchical_args['h_dictionary_path']
+# #                 self.h_actions = pickle.load(open('ppo/dictionaries/'+path+'.p', "rb" ))
+# #             else:
+# #                 self.h_actions = {a:[] for a in range(self.n_actions, self.num_h_actions+self.n_actions)}
+#         self.open_h_action_index = self.n_actions
+#         self.action_space = spaces.Discrete(self.n_actions+self.num_h_actions)
     
     def get_num_actions(self):
         return self.action_space.n
