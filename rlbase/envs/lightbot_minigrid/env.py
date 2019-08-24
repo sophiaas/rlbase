@@ -65,7 +65,7 @@ for i in range(1, 4):
         
 puzzles['test'] = {'size': 9, 'light_idxs': [[5,5]]}
 
-class Lightbot(MiniGridEnv):
+class LightbotMiniGrid(MiniGridEnv):
     
     class Actions(IntEnum):
         toggle = 0
@@ -74,21 +74,23 @@ class Lightbot(MiniGridEnv):
         right = 3
         left = 4
 
-    def __init__(
-        self,
-        puzzle_name,
-        agent_start_pos=None,
-        agent_start_dir=None,
-        max_steps=100,
-        reward_fn='100,-1,-1,-1',
-        toggle_ontop=False
-#         hierarchical_args=None
-    ):
-        self.agent_start_pos = agent_start_pos
-        self.agent_start_dir = agent_start_dir
+    def __init__(self, config):
+        
+        
+#         puzzle_name,
+#         agent_start_pos=None,
+#         agent_start_dir=None,
+#         max_steps=100,
+#         reward_fn='100,-1,-1,-1',
+#         toggle_ontop=False
+# #         hierarchical_args=None
+#     ):
+        self.config = config
+        self.agent_start_pos = config.agent_start_pos
+        self.agent_start_dir = config.agent_start_dir
         self.episode = 0
         
-        size = puzzles[puzzle_name]['size']
+        size = puzzles[config.puzzle_name]['size']
         if type(size) == list:
             width, height = size
         else:
@@ -96,19 +98,18 @@ class Lightbot(MiniGridEnv):
             
         print('size {}'.format(size))
             
-        self.light_idxs = puzzles[puzzle_name]['light_idxs']
-        self.reward_fn = [float(x) for x in reward_fn.split(',')]
-        self.toggle_ontop = toggle_ontop
+        self.light_idxs = puzzles[config.puzzle_name]['light_idxs']
+        self.reward_fn = [float(x) for x in config.reward_fn.split(',')]
+        self.toggle_ontop = config.toggle_ontop
 #         self.hierarchical_args = hierarchical_args
         self.name = 'lightbot_minigrid'
         
         super().__init__(
             width = width,
             height = height,
-            max_steps=max_steps,
+            max_steps=config.max_steps,
             # Set this to True for maximum speed
             see_through_walls=True,
-            custom_actions=True
         )
         
         self.actions = LightbotEnv.Actions
@@ -191,7 +192,7 @@ class Lightbot(MiniGridEnv):
             assert False, "unknown action"
             
         if self.lights_on == self.num_lights:
-            reward = self.reward_fn[0]
+            reward = self.config.reward_fn[0]
             done = True
         return reward, done
     
@@ -199,7 +200,7 @@ class Lightbot(MiniGridEnv):
         data = {
             'coords': self.agent_pos,
             'direction': self.agent_dir,
-            'light': 1 if curr_cell.type == 'light' else 0
+            'light': 1 if curr_cell.type == 'light' else 0,
             'light_on': 1 if curr_cell.is_on else 0
         }
         return data

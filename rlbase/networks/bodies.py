@@ -11,10 +11,6 @@ class BaseBody(nn.Module):
     def __init__(self, config):
         super(BaseBody, self).__init__()
         self.config = config
-        self.indim = config.indim
-        self.hdim = config.hdim
-        self.nlayers = config.nlayers
-        self.activation = config.activation
     
     def define_network(self):
         return NotImplementedError
@@ -24,23 +20,42 @@ class ConvolutionalBody(BaseBody):
     
     def __init__(self, config):
         super(ConvolutionalBody, self).__init__(config)
+        self.activation = self.config.activation
         self.define_network()
         
     def define_network(self):
-        self.layer_config = self.config.layer_config
-        self.network = nn.ModuleList([])
-        for i in range(self.nlayers):
-            self.network.append(
+        self.conv_layers = nn.ModuleList([])
+        self.fc_layers = nn.ModuleList([])
+        for cl in self.config.conv_layers:
+            self.conv_layers.append(
                 nn.Conv2d(
-                    in_channels=self.indim, 
-                    out_channels=self.layer_config[i]['out_channels'],
-                    kernel_size=self.layer_config[i]['kernel_size'],
-                    stride=self.layer_config[i]['stride']
+                    in_channels=cl.in_channels, 
+                    out_channels=cl.out_channels,
+                    kernel_size=cl.kernel_size,
+                    stride=cl.stride
                 )
             )
-    
+            if cl.pool:
+                self.conv_layers.append(nn.MaxPool2d(2,2))
+        
+#         self.ravel_dim = self.config.conv_layers[-1].out_channels * self.config.conv_layers[-1].kernel_size ** 2
+        indim = self.config.conv_layers[-1].out_channels
+
+        for fcl in self.config.fc_layers[:-1]:
+            self.fc_layers.append(nn.Linear(indim, fcl.hdim))
+            indim = fcl.hdim
+        self.fc_layers.append(nn.Linear(indim, self.config.hdim))
+        
+        
     def forward(self, x):
-        for layer in self.network:
+        if len(x.shape) < 4:
+            x = x.unsqueeze(0)
+        x = x.transpose(1, 3).transpose(2, 3)
+        for layer in self.conv_layers:
+            x = self.activation(layer(x))
+#         print('ravel dim: {}'.format(self.ravel_dim))        
+        x = x.view(-1, torch.tensor(x.shape[1:]).prod())
+        for layer in self.fc_layers:
             x = self.activation(layer(x))
         return x
         
@@ -49,6 +64,10 @@ class FullyConnectedBody(BaseBody):
     
     def __init__(self, config):
         super(FullyConnectedBody, self).__init__(config)
+        self.indim = config.indim
+        self.hdim = config.hdim
+        self.nlayers = config.nlayers
+        self.activation = config.activation
         self.define_network()
         
     def define_network(self):

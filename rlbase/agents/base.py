@@ -89,7 +89,7 @@ class BaseAgent(object):
                 
                 for key, val in transition.items():
                     episode_data[key].append(self.convert_data(val))
-                    
+                
                 episode_reward += transition['reward']
                 running_reward += transition['reward']
                 

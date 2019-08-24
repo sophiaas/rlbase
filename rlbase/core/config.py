@@ -1,6 +1,10 @@
 import argparse
 import torch
 from envs import FourRooms, Lightbot
+import sys
+sys.path.append('../')
+from gym_minigrid.envs.lightbot import LightbotEnv as LightbotMiniGrid 
+from gym_minigrid.wrappers import ImgObsWrapper
 import torch.nn as nn
 # from agents import A2C, PPO
 from agents import PPO
@@ -137,15 +141,24 @@ class LightbotMinigridConfig(EnvConfig):
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'lightbot'
-        self.init = Lightbot
-        self.reward_fn = "10,-1,-1,-1"
+        self.init = LightbotMiniGrid
+        self.reward_fn = "10,10,-1,-1"
         self.puzzle_name = "cross"
-        self.agent_view_size = 0
-        self.toggle_ontop = True
+        self.agent_view_size = 7
+        self.toggle_ontop = False
+        self.agent_start_pos = None
+        self.agent_start_dir = None
+        self.max_steps = None
         self.set_attributes(kwargs)
         
     def init_env(self):
-        return self.init(self)
+        env = ImgObsWrapper(self.init(self))
+        env.reset()
+        print('agent pos: {}'.format(env.agent_pos))
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.shape
+        return env
         
 
 class HanoiConfig(EnvConfig):
@@ -237,7 +250,8 @@ class ConvConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
         self.nlayers = 3
-        self.layers = [ConvLayerConfig()]
+        self.conv_layers = [ConvLayerConfig()]
+        self.fc_layers = [FCConfig()]
         self.set_attributes(kwargs)
         
         
