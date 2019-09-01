@@ -37,6 +37,8 @@ config.experiment.name = args.algo + '_' + config.experiment.name
     
 if args.device is not None:
     config.training.device = args.device
+else:
+    config.training.device = 'cpu'
 
 def main():
     model = agent(config)
