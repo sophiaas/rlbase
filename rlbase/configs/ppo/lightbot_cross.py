@@ -21,7 +21,7 @@ algorithm = PPOConfig(
      'clip_norm': 40,
      'optim_epochs': 5,
      'l2_reg': 1e-5,
-     'gamma': 0.95,
+     'gamma': 0.95,  # MC: usually I see 0.99, but shouldn't matter that much.
      'tau': 0.95
     }
 )
@@ -31,10 +31,10 @@ training = TrainingConfig(
      'max_episodes': 10000,
      'update_every': 100,
      'lr_scheduler': StepLR,
-     'lr': 1e-3, #1e-3
+     'lr': 1e-3,
      'lr_gamma': 0.9,
      'lr_step_interval': 1,
-     'weight_decay': 1e-5, #1e-5
+     'weight_decay': 1e-5,
      'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
@@ -44,7 +44,7 @@ training = TrainingConfig(
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
@@ -53,7 +53,7 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': None,
      'architecture': FullyConnectedHead,

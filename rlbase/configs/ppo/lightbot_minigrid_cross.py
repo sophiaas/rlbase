@@ -7,7 +7,7 @@ from networks.bodies import FullyConnectedBody, ConvolutionalBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_cross',
+    {'name': 'ppo_lightbot_minigrid_cross',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'log_interval': 100,
