@@ -4,6 +4,7 @@ from envs import FourRooms, Lightbot
 import sys
 sys.path.append('../')
 from gym_minigrid.envs.lightbot import LightbotEnv as LightbotMiniGrid 
+from gym_minigrid.envs.empty import EmptyRandomEnv5x5
 from gym_minigrid.wrappers import ImgObsWrapper
 import torch.nn as nn
 # from agents import A2C, PPO
@@ -140,15 +141,15 @@ class LightbotMinigridConfig(EnvConfig):
     
     def __init__(self, kwargs=None):
         super().__init__()
-        self.name = 'lightbot'
+        self.name = 'lightbot_minigrid'
         self.init = LightbotMiniGrid
         self.reward_fn = "10,10,-1,-1"
-        self.puzzle_name = "cross"
+        self.puzzle_name = "fractal_cross"
         self.agent_view_size = 7
         self.toggle_ontop = False
         self.agent_start_pos = None
         self.agent_start_dir = None
-        self.max_steps = None
+        self.max_steps = 500
         self.set_attributes(kwargs)
         
     def init_env(self):
@@ -159,7 +160,6 @@ class LightbotMinigridConfig(EnvConfig):
         self.action_dim = env.action_space.n
         self.obs_dim = env.observation_space.shape
         return env
-        
 
 class HanoiConfig(EnvConfig):
     
@@ -191,6 +191,22 @@ class FourRoomsConfig(EnvConfig):
         self.action_space = env.action_space
         self.action_dim = env.action_space.n
         self.obs_dim = env.observation_space.n
+        return env
+
+class MinigridEmptyRandom5x5(EnvConfig):
+    def __init__(self, kwargs=None):
+        super().__init__()
+        self.name = 'minigrid_random_empty_5x5'
+        self.init = EmptyRandomEnv5x5
+        self.set_attributes(kwargs)
+
+    def init_env(self):
+        env = ImgObsWrapper(self.init())
+        env.reset()
+        print('agent pos: {}'.format(env.agent_pos))
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.shape
         return env
         
 
