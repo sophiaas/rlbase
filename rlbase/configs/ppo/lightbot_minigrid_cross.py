@@ -1,10 +1,11 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody, ConvolutionalBody
 
-HDIM = 512
+# HDIM = 512
+HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppo_lightbot_minigrid_cross',
@@ -20,23 +21,23 @@ algorithm = PPOConfig(
     {'clip': 0.1,
      'clip_norm': 40,
      'optim_epochs': 5,
-     'l2_reg': 1e-5,
-     'gamma': 0.9,
+     'l2_reg': 1e-3,#1e-5,
+     'gamma': 0.99,#0.9,
      'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 50,
+    {'max_episode_length': 500,  # 50 MC
      'max_episodes': 10000,
-     'update_every': 100,
+     'update_every': 8,# 8 rougly 4096/500,  # 100 MC. Here we are updating every 8 episodes, where each episode has a maximum length of 500. 
      'lr_scheduler': StepLR,
-     'lr': 3e-5, #1e-3
+     'lr': 4e-5, # 3e-5 MC
      'lr_gamma': 0.99,
      'lr_step_interval': 1,
      'weight_decay': 1e-5, #1e-5
-     'minibatch_size': 50,
-     'optim': Adam,
+     'minibatch_size': 256, #50,
+     'optim': SGD, #Adam,
      'cuda': True,
      'device': 0
     }
@@ -44,7 +45,7 @@ training = TrainingConfig(
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
@@ -53,7 +54,7 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': None,
      'architecture': FullyConnectedHead,
@@ -92,12 +93,12 @@ conv3 = ConvLayerConfig(
     }
 )
 
-fc1 = FCConfig(
-    {'hdim': 128,
-     'n_layers': 1,
-     'activation': nn.ReLU(),
-    }
-)
+# fc1 = FCConfig(
+#     {'hdim': 128,
+#      'n_layers': 1,
+#      'activation': nn.ReLU(),
+#     }
+# )
 
 # fc2 = FCConfig(
 #     {'hdim': HDIM,
@@ -109,12 +110,34 @@ fc1 = FCConfig(
 body = ConvConfig({
     'n_layers': 4, 
     'conv_layers': [conv1, conv2, conv3],
-    'fc_layers': [fc1],
     'architecture': ConvolutionalBody,
     'activation': nn.ReLU(),
     'hdim': HDIM
     }
 )
+
+
+# class CNN(nn.Module):
+#     # from rl-starter-files
+#     def __init__(self, n, m):
+#         super(CNN, self).__init__()
+#         self.image_conv = nn.Sequential(
+#             nn.Conv2d(3, 16, (2, 2)),
+#             nn.ReLU(),
+#             nn.MaxPool2d((2, 2)),
+#             nn.Conv2d(16, 32, (2, 2)),
+#             nn.ReLU(),
+#             nn.Conv2d(32, 64, (2, 2)),
+#             nn.ReLU()
+#         )
+#         self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+#     def forward(self, x):
+#         # (bsize, H, W, C) --> (bsize, C, H, W)
+#         x = x.transpose(1, 3).transpose(2, 3)
+#         x = self.image_conv(x)
+#         x = x.reshape(x.shape[0], -1)
+#         return x
+
 
 """
 """
@@ -129,7 +152,7 @@ env = LightbotMinigridConfig(
     {'puzzle_name': 'fractal_cross_0',
      'agent_view_size': 7,
      'toggle_ontop': False,
-     'reward_fn': '100,100,-1,-1'
+     'reward_fn': '10,10,-1,-1'#'100,100,-1,-1'
     }
 )
 
