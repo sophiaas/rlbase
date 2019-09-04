@@ -32,7 +32,7 @@ training = TrainingConfig(
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3, #1e-3
-     'lr_gamma': 0.9,
+     'lr_gamma': 0.8,
      'lr_step_interval': 20,
      'weight_decay': 1e-5, #1e-5
      'minibatch_size': 50,
