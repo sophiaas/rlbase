@@ -11,7 +11,7 @@ parser.add_argument('--algo', type=str, default='ppo',
                     help='Algorithm') 
 parser.add_argument('--name', type=str, default=None,
                     help='Name to prepend to save dir') 
-parser.add_argument('--device', type=int, default=None,
+parser.add_argument('--device', type=int, default=0,
                     help='Device to run on') 
 
 
