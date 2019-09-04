@@ -36,7 +36,7 @@ def worker(grid):
         config.algorithm.tau = a[3]
         config.training.lr_step_interval = a[4]
         config.algorithm.clip = a[5]
-        config.experiment.name += '_lr{}_lrg{}_rg{}_t{}_si{}_c{}'.format(a[0], a[1], a[2], a[3], a[4], a[5])
+        config.experiment.name = 'lightbot_cross_ppo_lr{}_lrg{}_rg{}_t{}_si{}_c{}'.format(a[0], a[1], a[2], a[3], a[4], a[5])
         model = agent(config)
 
         model.train()
