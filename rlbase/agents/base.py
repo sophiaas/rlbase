@@ -48,14 +48,14 @@ class BaseAgent(object):
 
     def get_summary(self):
         summary = {
-            'episode': int(self.episode),
+            'episode': int(self.episode)-10,
             'running_rewards': self.running_rewards,
             'running_moves': self.running_moves
             }
         return summary
             
     def update_running(self, episode_rewards, episode_moves):
-        if self.episode == 1:
+        if self.episode == 10:
             self.running_rewards = episode_rewards   
             self.running_moves = episode_moves
         else:
@@ -68,20 +68,17 @@ class BaseAgent(object):
         avg_length = 0
         timestep = 0
         self.episode_steps = 0
-            
+
         # Iterate through episodes
         for i_episode in range(1, self.config.training.max_episodes+1):
             episode_reward = 0
-            self.episode_steps = 0
             episode_data = defaultdict(list, {'episode': int(self.episode)})
-            
             state = self.env.reset()
             
             # Iterate through steps
             for t in range(1, self.config.training.max_episode_length+1):
                 timestep += 1
                 self.episode_steps += 1
-                
                 state = torch.from_numpy(state).float().to(self.config.training.device)
                 
                 with torch.no_grad():
@@ -98,34 +95,21 @@ class BaseAgent(object):
                     
                 if done:
                     break
-                
-            if self.episode % self.config.training.update_every == 0:
-                self.update()
-                self.memory.clear()
-                    
-            # Update logging variables
-            self.update_running(episode_reward, t)
-                    
-            self.logger.push(self.get_summary())
+
+                if timestep % self.config.training.update_every == 0:
+                    self.update()
+                    self.memory.clear()
             
             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
                 self.logger.push_episode_data(episode_data)
                 
-            self.episode += 1
-            avg_length += t
-            
+                
             # Logging
             if i_episode % self.config.experiment.log_interval == 0:
-
-                avg_length = int(avg_length/self.config.experiment.log_interval)
-                running_reward = int((running_reward/self.config.experiment.log_interval))
-    
-                print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, 
-                                                                          avg_length, 
-                                                                          running_reward))
-                running_reward = 0
-                avg_length = 0
                 
+                print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, 
+                                                                    round(self.running_moves, 2), 
+                                                                    round(self.running_rewards, 2)))
                 self.logger.save()
                 self.logger.save_checkpoint(self)
                 
@@ -134,6 +118,17 @@ class BaseAgent(object):
                 
                 self.logger.plot('running_rewards')
                 self.logger.plot('running_moves')
+                
+            avg_length += self.episode_steps
+            
+            if i_episode % 10 == 0:
+                self.update_running(running_reward/10, avg_length/10)
+                running_reward = 0
+                avg_length = 0
+                self.logger.push(self.get_summary())
+                
+            self.episode_steps = 0
+            self.episode += 1
             
         print('Training complete')
     
