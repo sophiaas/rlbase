@@ -5,12 +5,13 @@ from agents import PPO, PPOC
 import torch
 import multiprocessing
 import itertools
+import copy
 
 parser = argparse.ArgumentParser(description='Lightbot')
 
 parser.add_argument('--config', type=str, default='lightbot_cross',
                     help='Name of config') 
-parser.add_argument('--algo', type=str, default='ppo',
+parser.add_argument('--algo', type=str, default='ppoc',
                     help='Algorithm') 
 parser.add_argument('--name', type=str, default=None,
                     help='Name to prepend to save dir') 
@@ -29,8 +30,8 @@ def get_chunks(iterable, chunks=12):
 
 def worker(grid):
     for a in grid:
-        config = all_configs[args.config]
-        config.training.max_episodes = 7500
+        config = copy.deepcopy(all_configs[args.config])
+        config.training.max_episodes = 2000
         config.experiment.every_n_episodes = 100
         config.training.lr = a[0]
         config.training.lr_gamma = a[1]
@@ -39,7 +40,7 @@ def worker(grid):
         config.training.lr_step_interval = a[4]
         config.algorithm.clip = a[5]
         config.algorithm.dc = a[6]
-        config.experiment.name += '_lr{}_lrg{}_rg{}_t{}_si{}_c{}_dc{}'.format(a[0], a[1], a[2], a[3], a[4], a[5], a[6])
+        config.experiment.name = 'lightbot_cross_ppoc_lr{}_lrg{}_rg{}_t{}_si{}_c{}_dc{}'.format(a[0], a[1], a[2], a[3], a[4], a[5], a[6])
         model = agent(config)
 
         model.train()
@@ -47,7 +48,7 @@ def worker(grid):
 """
 GRID
 """
-lrs = [1e-3, 5e-4, 3e-4, 1e-4]
+lrs = [3e-4, 1e-4]
 lr_gammas = [0.99, 0.9, 0.8]
 rl_gammas = [0.99, 0.95, 0.9]
 taus = [0.99, 0.95, 0.9]
