@@ -61,8 +61,6 @@ class PPOC(BaseAgent):
         prev_value = 0
         prev_advantage = 0
         
-        #IMPORTANT TODO: If return = 0, gamma is not exponentiated--eh maybe not? just think about it
-        # Compute discounted returns and advantages
         for i in reversed(range(rewards.size(0))):
             returns[i] = rewards[i] + gamma * prev_return * masks[i]
             deltas[i] = rewards[i] + gamma * prev_value * masks[i] - values[i]
