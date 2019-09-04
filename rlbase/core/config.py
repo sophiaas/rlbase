@@ -169,6 +169,7 @@ class HanoiConfig(EnvConfig):
         self.num_disks = 3
         self.num_pegs = 3
         self.initial_peg = None
+        self.continual = False
         self.reward_fn = "100,-1"
         self.set_attributes(kwargs)
         
