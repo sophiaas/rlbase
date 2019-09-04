@@ -100,7 +100,7 @@ class ExperimentConfig(BaseConfig):
         self.eval = False
         self.adapt = False
         self.debug = False 
-        self.plot_granularity = 50 # place datapoints every n episodes
+        self.plot_granularity = 1 # place datapoints every n episodes
         self.set_attributes(kwargs)
         
         
@@ -125,7 +125,7 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "100,-1,-1,-1"
+        self.reward_fn = "10,10,-1,-1"
         self.puzzle_name = "cross"
         self.set_attributes(kwargs)
         
@@ -260,6 +260,8 @@ class FCConfig(BaseConfig):
     def __init__(self, kwargs=None):
         self.hdim = 256
         self.nlayers = 3
+        self.activation = None
+        self.out_activation=None
         self.set_attributes(kwargs)
       
     
