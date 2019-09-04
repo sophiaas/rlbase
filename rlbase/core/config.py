@@ -1,12 +1,11 @@
 import argparse
 import torch
-from envs import FourRooms, Lightbot
+from envs import FourRooms, Lightbot, Hanoi
 import sys
 sys.path.append('../')
 from gym_minigrid.envs.lightbot import LightbotEnv as LightbotMiniGrid 
 from gym_minigrid.wrappers import ImgObsWrapper
 import torch.nn as nn
-# from agents import A2C, PPO
 from agents import PPO
 
 class BaseConfig(object):
@@ -166,14 +165,20 @@ class HanoiConfig(EnvConfig):
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'hanoi'
-        self.init = None #ENV
-        self.ndiscs = 3
-        self.npegs = 3
+        self.init = Hanoi
+        self.num_disks = 3
+        self.num_pegs = 3
         self.initial_peg = None
+        self.reward_fn = "100,-1"
         self.set_attributes(kwargs)
         
     def init_env(self):
-        return self.init(self)
+        env = self.init(self)
+        env.reset()
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.n
+        return env
         
         
 class FourRoomsConfig(EnvConfig):
