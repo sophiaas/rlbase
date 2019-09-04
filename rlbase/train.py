@@ -3,7 +3,7 @@ import argparse
 from agents import PPO, PPOC
 import torch
 
-parser = argparse.ArgumentParser(description='Lightbot')
+parser = argparse.ArgumentParser()
 
 parser.add_argument('--config', type=str, default='lightbot_cross',
                     help='Name of config') 
