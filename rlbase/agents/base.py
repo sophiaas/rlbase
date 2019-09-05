@@ -97,8 +97,14 @@ class BaseAgent(object):
                     break
 
                 if timestep % self.config.training.update_every == 0:
+                    ########################################
+                    # MC: convert to GPU here. Everywhere else should be CPU
+                    ########################################
                     self.update()
                     self.memory.clear()
+                    ########################################
+                    # MC: convert back to CPU
+                    ########################################
             
             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
                 self.logger.push_episode_data(episode_data)
