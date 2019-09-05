@@ -79,6 +79,7 @@ env = HanoiConfig(
     {'num_disks': 3,
      'num_pegs': 3,
      'initial_peg': None,
+     'continual': False,
      'reward_fn': '100,-1'
     }
 )

@@ -18,7 +18,7 @@ experiment = ExperimentConfig(
 algorithm = OCConfig(
     {'option_eps': 0.1, # NB: Not currently used
      'dc': 0.1, #deliberation cost
-     'n_options': 2
+     'n_options': 4
     }
 )
 
