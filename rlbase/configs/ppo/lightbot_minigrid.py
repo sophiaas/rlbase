@@ -11,7 +11,7 @@ experiment = ExperimentConfig(
     {'name': 'ppo_lightbot_minigrid',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 100,
+     'log_interval': 20,#100,
      'every_n_episodes': 1,
      'debug': True
     }
@@ -149,7 +149,7 @@ env = LightbotMinigridConfig(
     {'puzzle_name': 'fractal_cross_0',
      'agent_view_size': 7,
      'toggle_ontop': False,
-     'reward_fn': '10,10,-1,-1'#'100,100,-1,-1'
+     'reward_fn': '10,10,-1,-1'
     }
 )
 
