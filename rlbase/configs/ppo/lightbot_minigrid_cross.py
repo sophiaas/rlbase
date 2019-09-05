@@ -33,11 +33,11 @@ training = TrainingConfig(
      'update_every': 8,# 8 rougly 4096/500,  # 100 MC. Here we are updating every 8 episodes, where each episode has a maximum length of 500. 
      'lr_scheduler': StepLR,
      'lr': 4e-5, # 3e-5 MC
-     'lr_gamma': 0.99,
-     'lr_step_interval': 1,
+     'lr_gamma': 1,# 0.99, MC: for now let's not anneal
+     'lr_step_interval': 100,#1,
      'weight_decay': 1e-5, #1e-5
-     'minibatch_size': 256, #50,
-     'optim': SGD, #Adam,
+     'minibatch_size': 256, #50, for now let's not anneal
+     'optim': SGD, #Adam, for now let's not anneal
      'cuda': True,
      'device': 0
     }
