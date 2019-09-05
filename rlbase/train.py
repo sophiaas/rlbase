@@ -37,7 +37,7 @@ if args.name is not None:
     config.experiment.name = args.name + '_' + config.experiment.name
     
 if args.puzzle:
-    config.env.puzzle = puzzle
+    config.env.puzzle_name = puzzle
     config.experiment.name = config.experiment.name + '_' + args.puzzle
     
 if args.n_disks:
