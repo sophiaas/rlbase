@@ -7,10 +7,11 @@ from networks.bodies import FullyConnectedBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_debug1',
+    {'name': 'ppo_hanoi',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 20,
+     'log_interval': 100,
+     'every_n_episodes': 100,
      'debug': True
     }
 )
@@ -19,29 +20,29 @@ algorithm = PPOConfig(
     {'clip': 0.1,
      'clip_norm': 40,
      'optim_epochs': 5,
-     'l2_reg': 1e-5
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 50,
-     'max_episodes': 20000,
-     'update_every': 3000,
+    {'max_episode_length': 500,
+     'max_episodes': 10000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': 1e-3, #1e-3
-     'lr_gamma': 0.9,
-     'weight_decay': 1e-5, #1e-5
+     'lr': 1e-3,
+     'lr_gamma': 0.85,
+     'lr_step_interval': 20,
      'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1,
-     'gamma': 0.99 #0.9
+     'device': 0
     }
 )
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
@@ -50,8 +51,7 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
-     'activation': nn.ReLU(),
+     'nlayers': 1,
      'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
@@ -72,10 +72,13 @@ network = NetworkConfig(
      'body': body
     }
 )
-
-env = LightbotConfig(
-    {'puzzle_name': 'debug1',
-     'reward_fn': '10,10,-1,-1'
+    
+env = HanoiConfig(
+    {'n_disks': 2,
+     'n_pegs': 3,
+     'initial_peg': None,
+     'continual': True,
+     'reward_fn': '100,-1'
     }
 )
 
@@ -87,4 +90,3 @@ config = Config(
      'env': env
     }
 )
-

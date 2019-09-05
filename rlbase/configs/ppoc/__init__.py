@@ -1,12 +1,11 @@
 from configs.ppoc.fourrooms import config as fc
-from configs.ppoc.lightbot_cross import config as lcc
-from  configs.ppoc.lightbot_cross_compressed import config as lccc
-from configs.ppoc.lightbot_zigzag import config as lzc
-
+from configs.ppoc.lightbot import config as l
+from configs.ppoc.lightbot_minigrid import config as lm
+from configs.ppoc.hanoi import config as h
 
 all_configs = {
     'fourrooms': fc,
-    'lightbot_cross': lcc,
-    'lightbot_compressed': lccc,
-    'lightbot_zigzag': lzc
+    'lightbot': l,
+    'lightbot_minigrid': lm,
+    'hanoi': h
 }

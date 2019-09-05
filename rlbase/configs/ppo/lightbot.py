@@ -1,31 +1,44 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
 from torch.optim import Adam
-import torch.nn.functional as F
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 256
+HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot_zigzag',
+    {'name': 'ppo_lightbot',
      'base_dir': 'experiments/',
      'save_episode_data': True,
+     'log_interval': 100,
+     'every_n_episodes': 100,
      'debug': True
     }
 )
 
-algorithm = PPOConfig()
+algorithm = PPOConfig(
+    {'clip': 0.2,
+     'clip_norm': 40,
+     'optim_epochs': 5,
+     'l2_reg': 1e-5,
+     'gamma': 0.99,
+     'tau': 0.95
+    }
+)
 
 training = TrainingConfig(
     {'max_episode_length': 100,
-     'max_episodes': 20000,
-     'update_every': 20000,
+     'max_episodes': 10000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,
+     'lr_gamma': 0.9,
+     'lr_step_interval': 20,
+     'weight_decay': 1e-5,
+     'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
@@ -40,9 +53,8 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
-     'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
+     'nlayers': 1, #1
+     'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
     }
@@ -50,7 +62,7 @@ value_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
+     'nlayers': 1, 
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody
@@ -63,10 +75,9 @@ network = NetworkConfig(
     }
 )
 
-# network = ActorCriticConfig()
-
 env = LightbotConfig(
-    {'puzzle_name': 'zigzag'
+    {'puzzle_name': 'cross',
+     'reward_fn': '10,10,-1,-1'
     }
 )
 

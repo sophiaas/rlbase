@@ -1,13 +1,52 @@
 # EXPERIMENTS
 
-## Comparison of macros learned with OC vs. SSC
-## Tasks
-1. Lightbot Cross Original (Shaped Rewards)
-2. Four Rooms
+# Baselines
+## Transfer Learning Experiments
+*Cross all of the following:*
 
-## Transfer of macros with OC vs. SSC
-## Tasks
-1. Minigrid Lightbot (Sparse Rewards)
-  - Fractal
-  - Compositional
-2. Towers of Hanoi (Sparse Rewards)
+  **Algorithms**
+  - PPO   `python rlbase/train.py --algo ppo`
+    
+  - PPOC  `python rlbase/train.py --algo ppoc`
+  
+  **Training setups**
+  - No transfer (train from scratch on each puzzle)
+  - Transfer weights accross puzzles
+  
+  **Environments**
+  - Towers of Hanoi
+    `python rlbase/train.py --algo XXX --config hanoi`
+
+      `reward_fn = '100,-1'; max_episode_length = 500`
+      - 2 Disks (optimal: 3) `--n_disks 2`
+      - 3 Disks (optimal: 7) `--n_disks 3`
+      - 4 Disks (optimal: 15) `--n_disks 4`
+      - NB: We may want to go up to 5 disks if the above tasks are too easy. Optimal solutions scale as 2^n - 1
+      
+  - Lightbot Minigrid
+    `python rlbase/train.py --algo XXX --config lightbot_minigrid`
+
+      `reward_fn = '10,10,-1,-1'; max_episode_length = 500`
+      - Fractal Cross 0  `--puzzle fractal_cross_0`
+      - Fractal Cross 1  `--puzzle fractal_cross_1`
+      - Fractal Cross 2  `--puzzle fractal_cross_2`
+      - NB: These puzzles might be too hard. If so, use fractal_cross_X_0, fractal_cross_X_1, and fractal_cross_X_2 to titrate between X and X+1. Use gym-minigrid visualization tools to view the puzzles.
+     
+---
+## Comparison of Abstractions 
+*Cross the following:*
+
+**Algorithms**
+  - PPO    `python rlbase/train.py --algo ppo`
+  - PPOC   `python rlbase/train.py --algo ppoc`
+  
+**Environments**
+  - Lightbot Cross State Space  `--config lightbot`
+  
+    `reward_fn = 10,10,-1,-1'; max_episode_length = 100`
+    
+  - Four Rooms State Space      `--config fourrooms`
+    
+    `reward_fn = '100,-1'; max_episode_length = 500`
+  
+  

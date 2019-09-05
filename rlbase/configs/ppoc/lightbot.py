@@ -8,7 +8,7 @@ from networks.bodies import FullyConnectedBody
 HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_cross_hdim512',
+    {'name': 'ppoc_lightbot',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -16,9 +16,10 @@ experiment = ExperimentConfig(
 )
 
 algorithm = OCConfig(
-    {'option_eps': 0.1, # NB: Not currently used
-     'dc': 0.1, #deliberation cost
-     'n_options': 4
+    {'dc': 0.1, #deliberation cost
+     'n_options': 4,
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 

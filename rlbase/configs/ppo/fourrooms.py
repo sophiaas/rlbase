@@ -16,21 +16,26 @@ experiment = ExperimentConfig(
 )
 
 algorithm = PPOConfig(
-    {'gamma': 0.99,
+    {'clip': 0.2,
+     'clip_norm': 40,
+     'optim_epochs': 5,
+     'gamma': 0.99,
      'tau': 0.95
     }
 )
 
 training = TrainingConfig(
     {'max_episode_length': 100,
-     'max_episodes': 20000,
-     'update_every': 100,
+     'max_episodes': 10000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,
-     'lr_gamma': 0.9,
+     'lr_gamma': 0.85,
+     'lr_step_interval': 20,
+     'minibatch_size': 50,
      'optim': Adam,
      'cuda': True,
-     'device': 1,
+     'device': 0
     }
 )
 
@@ -46,7 +51,6 @@ policy_head = FCConfig(
 value_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'activation': nn.ReLU(),
      'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
@@ -67,8 +71,6 @@ network = NetworkConfig(
      'body': body
     }
 )
-
-# network = ActorCriticConfig()
 
 env = FourRoomsConfig()
 
