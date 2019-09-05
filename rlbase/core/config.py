@@ -1,13 +1,12 @@
 import argparse
 import torch
-from envs import FourRooms, Lightbot
+from envs import FourRooms, Lightbot, Hanoi
 import sys
 sys.path.append('../')
 from gym_minigrid.envs.lightbot import LightbotEnv as LightbotMiniGrid 
 from gym_minigrid.envs.empty import EmptyRandomEnv5x5
 from gym_minigrid.wrappers import ImgObsWrapper
 import torch.nn as nn
-# from agents import A2C, PPO
 from agents import PPO
 
 class BaseConfig(object):
@@ -101,7 +100,7 @@ class ExperimentConfig(BaseConfig):
         self.eval = False
         self.adapt = False
         self.debug = False 
-        self.plot_granularity = 50 # place datapoints every n episodes
+        self.plot_granularity = 1 # place datapoints every n episodes
         self.set_attributes(kwargs)
         
         
@@ -126,7 +125,7 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "100,-1,-1,-1"
+        self.reward_fn = "10,10,-1,-1"
         self.puzzle_name = "cross"
         self.set_attributes(kwargs)
         
@@ -166,14 +165,21 @@ class HanoiConfig(EnvConfig):
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'hanoi'
-        self.init = None #ENV
-        self.ndiscs = 3
-        self.npegs = 3
+        self.init = Hanoi
+        self.num_disks = 3
+        self.num_pegs = 3
         self.initial_peg = None
+        self.continual = False
+        self.reward_fn = "100,-1"
         self.set_attributes(kwargs)
         
     def init_env(self):
-        return self.init(self)
+        env = self.init(self)
+        env.reset()
+        self.action_space = env.action_space
+        self.action_dim = env.action_space.n
+        self.obs_dim = env.observation_space.n
+        return env
         
         
 class FourRoomsConfig(EnvConfig):
@@ -276,6 +282,8 @@ class FCConfig(BaseConfig):
     def __init__(self, kwargs=None):
         self.hdim = 256
         self.nlayers = 3
+        self.activation = None
+        self.out_activation=None
         self.set_attributes(kwargs)
       
     

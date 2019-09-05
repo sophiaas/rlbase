@@ -38,7 +38,6 @@ class ConvolutionalBody(BaseBody):
             if cl.pool:
                 self.conv_layers.append(nn.MaxPool2d(2,2))
         
-#         self.ravel_dim = self.config.conv_layers[-1].out_channels * self.config.conv_layers[-1].kernel_size ** 2
         indim = self.config.conv_layers[-1].out_channels
 
         for fcl in self.config.fc_layers[:-1]:
@@ -53,10 +52,9 @@ class ConvolutionalBody(BaseBody):
         x = x.transpose(1, 3).transpose(2, 3)
         for layer in self.conv_layers:
             x = self.activation(layer(x))
-#         print('ravel dim: {}'.format(self.ravel_dim))        
         x = x.view(-1, torch.tensor(x.shape[1:]).prod())
         for layer in self.fc_layers:
-            x = self.activation(layer(x))
+            x = self.activation(layer(x)).squeeze()
         return x
         
                                                       

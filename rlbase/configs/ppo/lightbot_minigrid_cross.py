@@ -30,11 +30,19 @@ algorithm = PPOConfig(
 training = TrainingConfig(
     {'max_episode_length': 500,  # 50 MC
      'max_episodes': 10000,
+# <<<<<<< HEAD
      'update_every': 8,# 8 rougly 4096/500,  # 100 MC. Here we are updating every 8 episodes, where each episode has a maximum length of 500. 
      'lr_scheduler': StepLR,
      'lr': 4e-5, # 3e-5 MC
      'lr_gamma': 1,# 0.99, MC: for now let's not anneal
      'lr_step_interval': 100,#1,
+# =======
+     # 'update_every': 4096,
+     # 'lr_scheduler': StepLR,
+     # 'lr': 1e-3, #1e-3
+     # 'lr_gamma': 0.8,
+     # 'lr_step_interval': 20,
+# >>>>>>> 5428eceb3089b47931328b2edfb49300eb26ec5e
      'weight_decay': 1e-5, #1e-5
      'minibatch_size': 256, #50, for now let's not anneal
      'optim': SGD, #Adam, for now let's not anneal
@@ -45,8 +53,7 @@ training = TrainingConfig(
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
-     'activation': nn.ReLU(),
+     'nlayers': 1, #1
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead
     }
@@ -54,8 +61,7 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
-     'activation': nn.ReLU(),
+     'nlayers': 1, #1
      'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
@@ -99,13 +105,12 @@ conv3 = ConvLayerConfig(
 #      'activation': nn.ReLU(),
 #     }
 # )
-
-# fc2 = FCConfig(
-#     {'hdim': HDIM,
-#      'n_layers': 1,
-#      'activation': nn.ReLU(),
-#     }
-# )
+fc1 = FCConfig(
+    {'hdim': HDIM,
+     'n_layers': 1,
+     'activation': nn.ReLU(),
+    }
+)
 
 body = ConvConfig({
     'n_layers': 4, 

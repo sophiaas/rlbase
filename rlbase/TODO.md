@@ -1,13 +1,14 @@
 ## Debugging:
+fixed state dimension issue for minigrid
 ~~debug PPO~~ 
-redo PPOC with lessons learned from PPO
-running rewards
-Is the option-state match fix working?
+~~redo PPOC with lessons learned from PPO~~
+--fix running rewards calculation--
+~~Is the option-state match fix working?~~
 
 ## Refactoring:
 ~~1. Configs and train files~~
 ~~2. Add ability to call train files with arguments~~
-3. Consolidate PPO and PPOC
+~~3. Consolidate PPO and PPOC~~
 Make separate bodies nicer
 
 ## Performance boosting:
@@ -19,7 +20,7 @@ Optional
 ## Novel
 Change mujoco representation to 3d point cloud
 Incorporate tensor field networks as body
-PPOC block entropy penalty
+~~PPOC block entropy penalty~~
 
 
 ## Completed:

@@ -4,9 +4,7 @@ from configs.ppo.lightbot_zigzag import config as lzc
 from configs.ppo.lightbot_debug1 import config as ld1
 from configs.ppo.lightbot_minigrid_cross import config as lmc
 from configs.ppo.minigrid_random_empty_5x5 import config as mgre
-
-
-
+from configs.ppo.hanoi_3_disks import config as h3d
 
 all_configs = {
     'fourrooms': fc,
@@ -15,4 +13,5 @@ all_configs = {
     'lightbot_debug1': ld1,
     'lightbot_minigrid_cross': lmc,
     'minigrid_random_empty_5x5': mgre,
+    'hanoi_3_disks': h3d
 }

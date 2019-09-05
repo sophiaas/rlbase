@@ -16,7 +16,7 @@ experiment = ExperimentConfig(
 )
 
 algorithm = OCConfig(
-    {'option_eps': 0.1,
+    {'option_eps': 0.1, # NB: Not currently used
      'dc': 0.1, #deliberation cost
      'n_options': 4
     }
@@ -25,13 +25,14 @@ algorithm = OCConfig(
 training = TrainingConfig(
     {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 20000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': 2e-3,
-     'ent_coeff': 0.1,
+     'lr': 1e-3,
+     'lr_gamma': 0.85,
+     'lr_step_interval': 10,
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
@@ -60,9 +61,7 @@ critic_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
      'outdim': None, # num options
-#      'n_options': None,
      'architecture': FullyConnectedHead
     }
 )
@@ -74,7 +73,6 @@ termination_head = FCConfig(
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
-#      'n_options': None
     }
 )
 
@@ -99,7 +97,8 @@ network = NetworkConfig(
 )
 
 env = LightbotConfig(
-    {'puzzle_name': 'cross'
+    {'puzzle_name': 'cross',
+     'reward_fn': "10,10,-1,-1"
     }
 )
 
