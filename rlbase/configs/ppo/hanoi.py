@@ -17,7 +17,7 @@ experiment = ExperimentConfig(
 )
 
 algorithm = PPOConfig(
-    {'clip': 0.2,
+    {'clip': 0.1,
      'clip_norm': 40,
      'optim_epochs': 5,
      'gamma': 0.99,
@@ -31,7 +31,7 @@ training = TrainingConfig(
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,
-     'lr_gamma': 0.8,
+     'lr_gamma': 0.85,
      'lr_step_interval': 20,
      'minibatch_size': 50,
      'optim': Adam,
@@ -74,8 +74,8 @@ network = NetworkConfig(
 )
     
 env = HanoiConfig(
-    {'num_disks': 2,
-     'num_pegs': 3,
+    {'n_disks': 2,
+     'n_pegs': 3,
      'initial_peg': None,
      'continual': True,
      'reward_fn': '100,-1'

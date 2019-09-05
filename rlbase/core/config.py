@@ -166,9 +166,10 @@ class HanoiConfig(EnvConfig):
         super().__init__()
         self.name = 'hanoi'
         self.init = Hanoi
-        self.num_disks = 3
-        self.num_pegs = 3
+        self.n_disks = 3
+        self.n_pegs = 3
         self.initial_peg = None
+#         self.random_init = True
         self.continual = False
         self.reward_fn = "100,-1"
         self.set_attributes(kwargs)
