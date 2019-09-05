@@ -97,15 +97,15 @@ conv3 = ConvLayerConfig(
 #      'activation': nn.ReLU(),
 #     }
 # )
-fc1 = FCConfig(
-    {'hdim': HDIM,
-     'n_layers': 1,
-     'activation': nn.ReLU(),
-    }
-)
+# fc1 = FCConfig(
+#     {'hdim': HDIM,
+#      'n_layers': 1,
+#      'activation': nn.ReLU(),
+#     }
+# )
 
 body = ConvConfig({
-    'n_layers': 4, 
+    'n_layers': 3, 
     'conv_layers': [conv1, conv2, conv3],
     'architecture': ConvolutionalBody,
     'activation': nn.ReLU(),
