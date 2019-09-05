@@ -5,36 +5,35 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 64
+HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_cross_compressed_v2',
+    {'name': 'ppoc_hanoi',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 20,
      'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'option_eps': 0.1,
-     'dc': 0.1, #deliberation cost
+    {'dc': 0.1, #deliberation cost
      'n_options': 4,
-     'block_ent_penalty': True,
-     'n_block_samples': 1000
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
+    {'max_episode_length': 500,
      'max_episodes': 20000,
-     'update_every': 1000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': .002,
-     'ent_coeff': 0.1,
+     'lr': 1e-3,
+     'lr_gamma': 0.85,
+     'lr_step_interval': 10,
      'optim': Adam,
      'cuda': True,
-     'device': 1
+     'device': 0
     }
 )
 
@@ -63,9 +62,7 @@ critic_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
      'outdim': None, # num options
-#      'n_options': None,
      'architecture': FullyConnectedHead
     }
 )
@@ -77,7 +74,6 @@ termination_head = FCConfig(
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
-#      'n_options': None
     }
 )
 
@@ -101,8 +97,12 @@ network = NetworkConfig(
     }
 )
 
-env = LightbotConfig(
-    {'puzzle_name': 'cross'
+env = HanoiConfig(
+    {'num_disks': 2,
+     'num_pegs': 3,
+     'initial_peg': None,
+     'continual': True,
+     'reward_fn': '100,-1'
     }
 )
 

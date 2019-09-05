@@ -5,10 +5,10 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 256
+HDIM = 512
 
 experiment = ExperimentConfig(
-    {'name': 'ppoc_lightbot_zigzag',
+    {'name': 'ppoc_lightbot_minigrid',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'debug': True
@@ -16,19 +16,21 @@ experiment = ExperimentConfig(
 )
 
 algorithm = OCConfig(
-    {'option_eps': 0.1,
-     'dc': 0.1, #deliberation cost
-     'n_options': 4
+    {'dc': 0.1, #deliberation cost
+     'n_options': 4,
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 300,
+    {'max_episode_length': 100,
      'max_episodes': 20000,
-     'update_every': 20000,
+     'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': .002,
-     'ent_coeff': 0.1,
+     'lr': 1e-3,
+     'lr_gamma': 0.85,
+     'lr_step_interval': 10,
      'optim': Adam,
      'cuda': True,
      'device': 0
@@ -39,7 +41,7 @@ actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=0),
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -50,7 +52,7 @@ option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -60,9 +62,7 @@ critic_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
      'outdim': None, # num options
-#      'n_options': None,
      'architecture': FullyConnectedHead
     }
 )
@@ -74,7 +74,6 @@ termination_head = FCConfig(
      'out_activation': nn.Softmax(dim=0),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
-#      'n_options': None
     }
 )
 
@@ -98,8 +97,11 @@ network = NetworkConfig(
     }
 )
 
-env = LightbotConfig(
-    {'puzzle_name': 'zigzag'
+env = LightbotMinigridConfig(
+    {'puzzle_name': 'fractal_cross_0',
+     'agent_view_size': 7,
+     'toggle_ontop': False,
+     'reward_fn': '10,10,-1,-1'
     }
 )
 
