@@ -6,7 +6,6 @@
   - PPO Hanoi
   - PPOC Hanoi
   - PPO Minigrid
-  - PPOC Minigrid
   - PPO Cross
   - PPOC Cross
   - PPO Four Rooms
