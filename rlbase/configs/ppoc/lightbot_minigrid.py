@@ -3,14 +3,16 @@ from torch.optim.lr_scheduler import StepLR
 from torch.optim import Adam
 import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
-from networks.bodies import FullyConnectedBody
+from networks.bodies import FullyConnectedBody, ConvolutionalBody
 
-HDIM = 512
+# HDIM = 512
+HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot_minigrid',
      'base_dir': 'experiments/',
      'save_episode_data': True,
+     'log_interval': 20,#100,
      'debug': True
     }
 )
@@ -24,14 +26,14 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
+    {'max_episode_length': 500,
      'max_episodes': 20000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': 1e-3,
-     'lr_gamma': 0.85,
-     'lr_step_interval': 10,
-     'optim': Adam,
+     'lr': 1e-3,  # TODO MC
+     'lr_gamma': 0.85,  # TODO MC
+     'lr_step_interval': 10,  # TODO MC
+     'optim': Adam, # TODO MC
      'cuda': True,
      'device': 0
     }
@@ -77,15 +79,69 @@ termination_head = FCConfig(
     }
 )
 
-body = FCConfig(
-    {'hdim': HDIM, 
-     'nlayers': 1,
+# body = FCConfig(
+#     {'hdim': HDIM, 
+#      'nlayers': 1,
+#      'activation': nn.ReLU(),
+#      'out_activation': nn.ReLU(),
+#      'architecture': FullyConnectedBody,
+#      'indim': None # observation dim
+#     }
+# )
+
+"""Convolutional body """
+conv1 = ConvLayerConfig(
+    {'in_channels': 3,
+     'kernel_size': 2,
+     'stride': 1,
+     'out_channels': 16,
      'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
-     'architecture': FullyConnectedBody,
-     'indim': None # observation dim
+     'pool': True
     }
 )
+
+conv2 = ConvLayerConfig(
+    {'in_channels': 16,
+     'kernel_size': 2,
+     'stride': 1,
+     'out_channels': 32,
+     'activation': nn.ReLU(),
+     'pool': False
+    }
+)
+
+conv3 = ConvLayerConfig(
+    {'in_channels': 32,
+     'kernel_size': 2,
+     'stride': 1,
+     'out_channels': 64,
+     'activation': nn.ReLU(),
+     'pool': False
+    }
+)
+
+# fc1 = FCConfig(
+#     {'hdim': 128,
+#      'n_layers': 1,
+#      'activation': nn.ReLU(),
+#     }
+# )
+# fc1 = FCConfig(
+#     {'hdim': HDIM,
+#      'n_layers': 1,
+#      'activation': nn.ReLU(),
+#     }
+# )
+
+body = ConvConfig({
+    'n_layers': 3, 
+    'conv_layers': [conv1, conv2, conv3],
+    'architecture': ConvolutionalBody,
+    'activation': nn.ReLU(),
+    'hdim': HDIM
+    }
+)
+
 
 network = NetworkConfig(
     {'heads': {
