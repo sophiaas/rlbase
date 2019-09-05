@@ -32,7 +32,8 @@
      
 ---
 ## Comparison of Abstractions 
-*Cross the following*
+*Cross the following:*
+
 **Algorithms**
   - PPO    `python rlbase/train.py --algo ppo`
   - PPOC   `python rlbase/train.py --algo ppoc`
@@ -43,7 +44,7 @@
     `reward_fn = 10,10,-1,-1'; max_episode_length = 100`
     
   - Four Rooms State Space      `--config fourrooms`
-  
-   `reward_fn = '100,-1'; max_episode_length = 500`
+    
+    `reward_fn = '100,-1'; max_episode_length = 500`
   
   
