@@ -24,12 +24,12 @@
 ### Results
   - Sparse Skill Coding
   
-### Debugging
+*Optional / Low Priority*
 
 ### Refactoring
   - Make separate bodies nicer
 
-### Performance boosting:
+### Performance boosting
   - Anneal PPO epochs
   - Weight decay
   - Entropy penalty in loss function
