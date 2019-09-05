@@ -21,6 +21,7 @@
       - 2 Disks `--n_disks 2`
       - 3 Disks `--n_disks 3`
       - 4 Disks `--n_disks 4`
+      - NB: We may want to go up to 5 disks if the above tasks are too easy
       
   - Lightbot Minigrid
     `python rlbase/train.py --algo XXX --config lightbot_minigrid`
