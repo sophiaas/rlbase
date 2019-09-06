@@ -51,8 +51,9 @@ class Hanoi(gym.Env):
     def reset_raw_state(self, initial_peg):
         self.raw_state = [[0]*self.max_disks]*self.num_pegs
         start_peg = [0]*self.max_disks
-        for i in range(1,self.num_disks+1):
-            start_peg[-i] = i
+        stack = list(range(1, self.num_disks+1))
+        for i in stack:
+            start_peg[-i] = stack[-i]
         self.raw_state[self.initial_peg] = start_peg
         
     def set_action_space(self):
@@ -76,8 +77,9 @@ class Hanoi(gym.Env):
             if i != initial_peg:
                 goal = [[0]*self.max_disks]*self.num_pegs
                 goal_peg = [0]*self.max_disks
-                for i in range(1,self.num_disks+1):
-                    goal_peg[-i] = i
+                stack = list(range(1, self.num_disks+1))
+                for j in stack:
+                    goal_peg[-j] = stack[-j]
                 goal[i] = goal_peg
                 self.raw_goal_states.append(goal)
    
