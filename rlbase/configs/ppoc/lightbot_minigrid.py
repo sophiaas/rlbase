@@ -1,18 +1,18 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody, ConvolutionalBody
 
-# HDIM = 512
 HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot_minigrid',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 20,#100,
+     'log_interval': 20,
+     'every_n_episodes': 1,
      'debug': True
     }
 )
@@ -30,10 +30,12 @@ training = TrainingConfig(
      'max_episodes': 20000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': 1e-3,  # TODO MC
-     'lr_gamma': 0.85,  # TODO MC
-     'lr_step_interval': 10,  # TODO MC
-     'optim': Adam, # TODO MC
+     'lr': 4e-5,  # TODO MC
+     'lr_gamma': 0.99,  # TODO MC
+     'lr_step_interval': 100,  # TODO MC
+     'weight_decay': 1e-5, #1e-5
+     'minibatch_size': 256, #50, for now let's not anneal
+     'optim': SGD, # TODO MC
      'cuda': True,
      'device': 0
     }
@@ -43,7 +45,7 @@ actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -54,7 +56,7 @@ option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -73,7 +75,7 @@ termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Sigmoid(),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }

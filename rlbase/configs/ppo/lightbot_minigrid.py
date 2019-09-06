@@ -4,14 +4,13 @@ from torch.optim import Adam, SGD
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody, ConvolutionalBody
 
-# HDIM = 512
 HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppo_lightbot_minigrid',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 20,#100,
+     'log_interval': 20,
      'every_n_episodes': 1,
      'debug': True
     }
@@ -21,7 +20,6 @@ algorithm = PPOConfig(
     {'clip': 0.1,
      'clip_norm': 40,
      'optim_epochs': 5,
-     'l2_reg': 1e-3,#1e-5,
      'gamma': 0.99,#0.9,
      'tau': 0.95
     }
@@ -29,11 +27,11 @@ algorithm = PPOConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 10000,
+     'max_episodes': 20000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 4e-5, # 3e-5 MC
-     'lr_gamma': 1,# 0.99, MC: for now let's not anneal
+     'lr_gamma': 0.99,# 0.99, MC: for now let's not anneal
      'lr_step_interval': 100,#1,
      'weight_decay': 1e-5, #1e-5
      'minibatch_size': 256, #50, for now let's not anneal
@@ -46,7 +44,7 @@ training = TrainingConfig(
 policy_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),  # MC: does this make sense?
      'architecture': FullyConnectedHead
     }
 )
@@ -112,29 +110,6 @@ body = ConvConfig({
     'hdim': HDIM
     }
 )
-
-
-# class CNN(nn.Module):
-#     # from rl-starter-files
-#     def __init__(self, n, m):
-#         super(CNN, self).__init__()
-#         self.image_conv = nn.Sequential(
-#             nn.Conv2d(3, 16, (2, 2)),
-#             nn.ReLU(),
-#             nn.MaxPool2d((2, 2)),
-#             nn.Conv2d(16, 32, (2, 2)),
-#             nn.ReLU(),
-#             nn.Conv2d(32, 64, (2, 2)),
-#             nn.ReLU()
-#         )
-#         self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
-#     def forward(self, x):
-#         # (bsize, H, W, C) --> (bsize, C, H, W)
-#         x = x.transpose(1, 3).transpose(2, 3)
-#         x = self.image_conv(x)
-#         x = x.reshape(x.shape[0], -1)
-#         return x
-
 
 """
 """
