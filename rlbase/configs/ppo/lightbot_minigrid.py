@@ -43,7 +43,7 @@ training = TrainingConfig(
 policy_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead
     }
 )
