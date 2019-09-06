@@ -81,7 +81,9 @@ class OptionCritic(nn.Module):
         action_log_prob = action_dist.log_prob(action)
         
         term_prob = self.term_forward(state)
-        if term_prob[option.data] > torch.rand(1).to(self.device):
+        if term_prob[option.data] > torch.tensor(0.5).to(self.device):
+#         if term_prob[option.data] > torch.rand(1).to(self.device):
+
             terminate = True
             next_option = option_dist.sample()
         else:

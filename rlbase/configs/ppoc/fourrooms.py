@@ -72,7 +72,7 @@ termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1),
+     'out_activation': nn.Sigmoid(),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
