@@ -4,39 +4,19 @@ from torch.optim import Adam
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 512
+HDIM = 128
 
 experiment = ExperimentConfig(
     {'name': 'ppo_hanoi',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'log_interval': 100,
-     'every_n_episodes': 100,
-     'debug': True
     }
 )
 
 algorithm = PPOConfig(
-    {'clip': 0.1,
-     'clip_norm': 40,
-     'optim_epochs': 5,
-     'gamma': 0.99,
-     'tau': 0.95
-    }
+    {}
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_episodes': 10000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 1e-3,
-     'lr_gamma': 0.85,
-     'lr_step_interval': 20,
-     'minibatch_size': 50,
-     'optim': Adam,
-     'cuda': True,
-     'device': 0
+    {
     }
 )
 
@@ -60,7 +40,7 @@ value_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, 
+     'nlayers': 2, 
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody
@@ -74,11 +54,7 @@ network = NetworkConfig(
 )
     
 env = HanoiConfig(
-    {'n_disks': 2,
-     'n_pegs': 3,
-     'initial_peg': None,
-     'continual': True,
-     'reward_fn': '100,-1'
+    {
     }
 )
 

@@ -1,39 +1,24 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 512
+HDIM = 128
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
-     'gamma': 0.99,
-     'tau': 0.95
+    {
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
-     'max_episodes': 20000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 1e-3,
-     'lr_gamma': 0.85,
-     'lr_step_interval': 10,
-     'optim': Adam,
-     'cuda': True,
-     'device': 0
+    {
     }
 )
 
@@ -41,7 +26,7 @@ actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -52,7 +37,7 @@ option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -71,7 +56,7 @@ termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1),
+     'out_activation': nn.Sigmoid(),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -79,7 +64,7 @@ termination_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
+     'nlayers': 2,
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,
@@ -98,8 +83,7 @@ network = NetworkConfig(
 )
 
 env = LightbotConfig(
-    {'puzzle_name': 'cross',
-     'reward_fn': "10,10,-1,-1"
+    {
     }
 )
 

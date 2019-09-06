@@ -9,35 +9,16 @@ HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot_minigrid',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'log_interval': 20,
-     'every_n_episodes': 1,
-     'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
-     'gamma': 0.99,
-     'tau': 0.95
+    {
     }
 )
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 20000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 4e-5,  # TODO MC
-     'lr_gamma': 0.99,  # TODO MC
-     'lr_step_interval': 100,  # TODO MC
-     'weight_decay': 1e-5, #1e-5
-     'minibatch_size': 256, #50, for now let's not anneal
-     'optim': SGD, # TODO MC
-     'cuda': True,
-     'device': 0
     }
 )
 
@@ -81,16 +62,6 @@ termination_head = FCConfig(
     }
 )
 
-# body = FCConfig(
-#     {'hdim': HDIM, 
-#      'nlayers': 1,
-#      'activation': nn.ReLU(),
-#      'out_activation': nn.ReLU(),
-#      'architecture': FullyConnectedBody,
-#      'indim': None # observation dim
-#     }
-# )
-
 """Convolutional body """
 conv1 = ConvLayerConfig(
     {'in_channels': 3,
@@ -122,19 +93,6 @@ conv3 = ConvLayerConfig(
     }
 )
 
-# fc1 = FCConfig(
-#     {'hdim': 128,
-#      'n_layers': 1,
-#      'activation': nn.ReLU(),
-#     }
-# )
-# fc1 = FCConfig(
-#     {'hdim': HDIM,
-#      'n_layers': 1,
-#      'activation': nn.ReLU(),
-#     }
-# )
-
 body = ConvConfig({
     'n_layers': 3, 
     'conv_layers': [conv1, conv2, conv3],
@@ -156,10 +114,7 @@ network = NetworkConfig(
 )
 
 env = LightbotMinigridConfig(
-    {'puzzle_name': 'fractal_cross_0',
-     'agent_view_size': 7,
-     'toggle_ontop': False,
-     'reward_fn': '10,10,-1,-1'
+    {
     }
 )
 

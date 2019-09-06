@@ -5,36 +5,20 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 256
+HDIM = 128
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_fourrooms',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
-     'gamma': 0.99,
-     'tau': 0.95
+    {
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
-     'max_episodes': 20000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'minibatch_size': 50,
-     'lr': 1e-3,
-     'lr_step_interval': 20,
-     'lr_gamma': 0.8,
-     'optim': Adam,
-     'cuda': True,
-     'device': 1
+    {
     }
 )
 
@@ -72,7 +56,7 @@ termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1),
+     'out_activation': nn.Sigmoid(),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -80,7 +64,7 @@ termination_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
+     'nlayers': 2,
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,

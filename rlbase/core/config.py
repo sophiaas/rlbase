@@ -8,6 +8,9 @@ from gym_minigrid.envs.empty import EmptyRandomEnv5x5
 from gym_minigrid.wrappers import ImgObsWrapper
 import torch.nn as nn
 from agents import PPO
+from torch.optim import Adam, SGD
+from torch.optim.lr_scheduler import StepLR
+
 
 class BaseConfig(object):
     
@@ -32,8 +35,8 @@ class PPOConfig(AlgorithmConfig):
     def __init__(self, kwargs=None):
         super().__init__()
         self.name = 'PPO'
-        self.optim_epochs = 4
-        self.clip = 0.2
+        self.optim_epochs = 5
+        self.clip = 0.1
         self.clip_norm = 40
         self.l2_reg = 1e-5
         self.anneal_epochs = True
@@ -60,20 +63,20 @@ class OCConfig(PPOConfig):
 class TrainingConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
-        self.optim = None
+        self.optim = SGD
         self.weight_decay = 1e-5
-        self.lr = 1e-4
-        self.lr_scheduler = None
+        self.lr = 4e-5
+        self.lr_scheduler = StepLR
         self.betas = (0.9, 0.999)
-        self.minibatch_size = 50
+        self.minibatch_size = 256
         self.max_episode_length = 100
-        self.max_episodes = 20000
-        self.update_every = 100
-        self.lr_gamma = 0.9
-        self.lr_step_interval = 1
+        self.max_episodes = 10000
+        self.update_every = 4096
+        self.lr_gamma = 0.99
+        self.lr_step_interval = 100
         self.action_var = 0.5 # for continuous action spaces
         self.cuda = True
-        self.device = 1
+        self.device = 0
         self.set_attributes(kwargs)
         
 
@@ -91,15 +94,15 @@ class ExperimentConfig(BaseConfig):
      def __init__(self, kwargs=None):
         self.name = ""
         self.seed = 543
-        self.log_interval = 100
+        self.log_interval = 20
         self.every_n_episodes = 100
-        self.save_episode_data = False
+        self.save_episode_data = True
         self.base_dir = 'experiments/'
         self.render = False
         self.resume = ""
         self.eval = False
         self.adapt = False
-        self.debug = False 
+        self.debug = True 
         self.plot_granularity = 1 # place datapoints every n episodes
         self.set_attributes(kwargs)
         
@@ -143,7 +146,7 @@ class LightbotMinigridConfig(EnvConfig):
         self.name = 'lightbot_minigrid'
         self.init = LightbotMiniGrid
         self.reward_fn = "10,10,-1,-1"
-        self.puzzle_name = "fractal_cross"
+        self.puzzle_name = None
         self.agent_view_size = 7
         self.toggle_ontop = False
         self.agent_start_pos = None
@@ -166,11 +169,11 @@ class HanoiConfig(EnvConfig):
         super().__init__()
         self.name = 'hanoi'
         self.init = Hanoi
-        self.n_disks = 3
+        self.n_disks = None
         self.n_pegs = 3
         self.initial_peg = None
 #         self.random_init = True
-        self.continual = False
+        self.continual = True
         self.reward_fn = "100,-1"
         self.set_attributes(kwargs)
         
