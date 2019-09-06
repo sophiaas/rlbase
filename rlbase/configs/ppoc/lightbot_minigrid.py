@@ -43,7 +43,7 @@ actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -54,7 +54,7 @@ option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -73,7 +73,7 @@ termination_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=0),
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
