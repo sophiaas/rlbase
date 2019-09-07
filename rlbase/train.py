@@ -15,6 +15,8 @@ parser.add_argument('--puzzle', type=str, default=None,
                     help='puzzle name for Lightbot and LightbotMinigrid environments')
 parser.add_argument('--n_disks', type=int, default=None,
                     help='number of disks for Hanoi environment')
+parser.add_argument('--lr', type=float, default=1e-4,
+                    help='learning rate')
 parser.add_argument('--device', type=int, default=-1,
                     help='Device to run on') 
 
@@ -43,7 +45,9 @@ if args.puzzle:
 if args.n_disks:
     config.env.n_disks = args.n_disks
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
-    
+
+config.training.lr = args.lr
+
 if args.device >= 0:
     config.training.device = args.device
 else:

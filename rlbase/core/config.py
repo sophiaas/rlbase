@@ -65,7 +65,7 @@ class TrainingConfig(BaseConfig):
     def __init__(self, kwargs=None):
         self.optim = SGD
         self.weight_decay = 1e-5
-        self.lr = 4e-5
+        self.lr = 1e-4
         self.lr_scheduler = StepLR
         self.betas = (0.9, 0.999)
         self.minibatch_size = 256

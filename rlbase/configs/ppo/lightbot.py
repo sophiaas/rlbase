@@ -4,7 +4,7 @@ from torch.optim import Adam, SGD
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 128
+HDIM = 512
 
 experiment = ExperimentConfig(
     {'name': 'ppo_lightbot',

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 128
+HDIM = 512
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_fourrooms',

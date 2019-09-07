@@ -21,12 +21,13 @@ register(
 
 class Hanoi(gym.Env):
             
-    def __init__(self, config, verbose=False):
+    def __init__(self, config, verbose=False, max_disks=8):
         self.config = config
         self.num_pegs = self.config.n_pegs
         self.initial_peg = self.config.initial_peg
         self.num_disks = self.config.n_disks
         self.continual = self.config.continual
+        self.max_disks = max_disks
         self.set_action_space()
         self.set_reward_fn(*[float(x) for x in config.reward_fn.split(',')])
         self.state = self.reset()
@@ -48,8 +49,12 @@ class Hanoi(gym.Env):
         return copy.deepcopy(self.state)
     
     def reset_raw_state(self, initial_peg):
-        self.raw_state = [[0]*self.num_disks]*self.num_pegs
-        self.raw_state[self.initial_peg] = list(range(1,self.num_disks+1))
+        self.raw_state = [[0]*self.max_disks]*self.num_pegs
+        start_peg = [0]*self.max_disks
+        stack = list(range(1, self.num_disks+1))
+        for i in stack:
+            start_peg[-i] = stack[-i]
+        self.raw_state[self.initial_peg] = start_peg
         
     def set_action_space(self):
         self.possible_moves = list(itertools.permutations(range(self.num_pegs), 2))
@@ -70,8 +75,12 @@ class Hanoi(gym.Env):
         self.raw_goal_states = []
         for i in range(self.num_pegs):
             if i != initial_peg:
-                goal = [[0]*self.num_disks]*self.num_pegs
-                goal[i] = list(range(1, self.num_disks+1))
+                goal = [[0]*self.max_disks]*self.num_pegs
+                goal_peg = [0]*self.max_disks
+                stack = list(range(1, self.num_disks+1))
+                for j in stack:
+                    goal_peg[-j] = stack[-j]
+                goal[i] = goal_peg
                 self.raw_goal_states.append(goal)
    
     def set_reward_fn(self, ifdone, otherwise):
@@ -84,7 +93,7 @@ class Hanoi(gym.Env):
         self.reward_fn = reward_fn
 
     def empty_peg(self, peg):
-        if peg == [0] * self.num_disks:
+        if peg == [0] * self.max_disks:
             return True
         else:
             return False
