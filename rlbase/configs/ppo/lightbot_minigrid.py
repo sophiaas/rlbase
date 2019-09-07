@@ -16,7 +16,7 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 50000,
+    {'max_episode_length': 500000,
     }
 )
 
@@ -96,4 +96,16 @@ config = Config(
      'env': env
     }
 )
+
+def post_process(config):
+    # post processing
+    if config.env.puzzle_name == 'fractal_cross_0':
+        print('000')
+    elif config.env.puzzle_name == 'fractal_cross_1':
+        print('111')
+    elif config.env.puzzle_name == 'fractal_cross_2':
+        print('222')
+    else:
+        assert False
+    return config
 

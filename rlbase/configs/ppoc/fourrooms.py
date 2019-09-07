@@ -18,7 +18,7 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {
+    {'lr': 1e-3,
     }
 )
 
@@ -92,4 +92,7 @@ config = Config(
      'env': env
     }
 )
+
+def post_process(config):
+    return config
 

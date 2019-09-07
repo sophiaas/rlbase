@@ -96,3 +96,15 @@ config = Config(
     }
 )
 
+def post_process(config):
+    # post processing
+    if config.env.n_disks == 2:
+        print('000')
+    elif config.env.n_disks == 3:
+        print('111')
+    elif config.env.n_disks == 4:
+        print('222')
+    else:
+        assert False
+    return config
+

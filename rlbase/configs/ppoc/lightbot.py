@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 512
+HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot',
@@ -18,7 +18,7 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {
+    {'lr': 1e-3
     }
 )
 
@@ -95,4 +95,7 @@ config = Config(
      'env': env
     }
 )
+
+def post_process(config):
+    return config
 

@@ -97,7 +97,7 @@ class ExperimentConfig(BaseConfig):
         self.log_interval = 20
         self.every_n_episodes = 100
         self.save_episode_data = True
-        self.base_dir = 'experiments/sparse50000/'
+        self.base_dir = 'experiments/'
         self.render = False
         self.resume = ""
         self.eval = False

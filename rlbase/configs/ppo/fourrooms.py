@@ -17,7 +17,7 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {
+    {'lr': 5e-4,
     }
 )
 
@@ -65,3 +65,5 @@ config = Config(
     }
 )
 
+def post_process(config):
+    return config
