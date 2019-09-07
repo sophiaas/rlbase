@@ -63,7 +63,7 @@ class OCConfig(PPOConfig):
 class TrainingConfig(BaseConfig):
     
     def __init__(self, kwargs=None):
-        self.optim = SGD
+        self.optim = Adam
         self.weight_decay = 1e-5
         self.lr = 1e-4
         self.lr_scheduler = StepLR
@@ -97,7 +97,7 @@ class ExperimentConfig(BaseConfig):
         self.log_interval = 20
         self.every_n_episodes = 100
         self.save_episode_data = True
-        self.base_dir = 'experiments/'
+        self.base_dir = 'experiments/sparse50000/'
         self.render = False
         self.resume = ""
         self.eval = False
@@ -128,7 +128,8 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        self.reward_fn = "10,10,-1,-1"
+        # self.reward_fn = "10,10,-1,-1"
+        self.reward_fn = "100,-1,-1,-1"
         self.puzzle_name = "cross"
         self.set_attributes(kwargs)
         
@@ -145,7 +146,8 @@ class LightbotMinigridConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot_minigrid'
         self.init = LightbotMiniGrid
-        self.reward_fn = "10,10,-1,-1"
+        # self.reward_fn = "10,10,-1,-1"
+        self.reward_fn = "100,-1,-1,-1"
         self.puzzle_name = None
         self.agent_view_size = 7
         self.toggle_ontop = False

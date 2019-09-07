@@ -47,6 +47,7 @@ if args.n_disks:
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
 
 config.training.lr = args.lr
+config.experiment.name += '_lr{}'.format(args.lr)
 
 if args.device >= 0:
     config.training.device = args.device
