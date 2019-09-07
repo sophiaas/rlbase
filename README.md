@@ -15,3 +15,5 @@ See `train.py` for other options.
 To evaluate a pre-trained model, run:
 
 `python evaluate.py --model_dir [logging directory] --episode [episode to load checkpoint from] --n_eval_steps [number of steps to evaluate]`
+
+Data from the evaluated model is saved to `[logging directory]/evaluate/`
