@@ -11,19 +11,20 @@ experiment = ExperimentConfig(
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'log_interval': 100,
-     'every_n_episodes': 100,
+     'every_n_episodes': 1,
      'debug': True
     }
 )
 
 algorithm = SSCConfig(
-    {'n_hl_actions': 4,
-     'n_learning_stages': 4,
+    {'n_hl_actions': 8,
+     'n_learning_stages': 12,
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,
-     'load_dir': 'experiments/test_ppo_hanoi/evaluate/',
-     'load_action_dir': 'experiments/ssc_hanoi/'
+#      'load_dir': 'experiments/ssc_hanoi/'
+     'load_dir': 'experiments/test_ppo_hanoi/evaluate/'
+#      'load_action_dir': 'experiments/ssc_hanoi/'
     }
 )
 
