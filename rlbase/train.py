@@ -42,8 +42,6 @@ if args.name:
 if args.puzzle:
     config.env.puzzle_name = args.puzzle
     config.experiment.name = config.experiment.name + '_' + args.puzzle
-
-    # if sparse: then change reward and change config.training.max_episode_length to 500000 otherwise 500
     
 if args.n_disks:
     config.env.n_disks = args.n_disks
