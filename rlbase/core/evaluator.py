@@ -31,9 +31,13 @@ class Evaluator(object):
         else:
             return ValueError('Unknown model type')
         
-        self.model.device = config.device
+        if config.device >= 0:
+            self.model.device = config.device
+        else:
+            self.model.device = 'cpu'
         
-        checkpoint = torch.load(config.model_dir+'checkpoints/episode_{}'.format(config.episode))
+        checkpoint = torch.load(os.path.join(config.model_dir,'checkpoints','episode_{}'.format(config.episode)))
+
         self.model.policy.load_state_dict(checkpoint['policy'])
         
         self.model.logger.logdir += 'evaluate/'
