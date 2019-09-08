@@ -199,13 +199,13 @@ class BaseAgent(object):
             if i_episode % self.config.experiment.log_interval == 0:
                 print('Episode {} \t length: {} \t reward: {}'.format(i_episode, t, episode_reward))
 
-                if self.config.experiment.save_episode_data:
-                    self.logger.save_episode_data()
-
         mean_return_across_episodes = np.mean(returns)
         std_return_across_episodes = np.std(returns)
 
         self.logger.save()
+
+        if self.config.experiment.save_episode_data:
+            self.logger.save_episode_data()
 
         print('Mean Return Across Episodes: {}'.format(mean_return_across_episodes))
         print('Std Return Across Episodes: {}'.format(std_return_across_episodes))

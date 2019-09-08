@@ -35,19 +35,20 @@ import itertools
 prefix ='python rlbase/evaluate.py --model_dir'
 
 model_dirs = [
-    # lightbot state space
-    '/home/mbchang/shared/ssc/rlbase/experiments/adam_ppo_lightbot_lr0.0001',
-    '/home/mbchang/shared/ssc/rlbase/experiments/adam_ppoc_lightbot_lr0.0005',
+    # # lightbot state space
+    # '/home/mbchang/shared/ssc/rlbase/experiments/adam_ppo_lightbot_lr0.0001',
+    # '/home/mbchang/shared/ssc/rlbase/experiments/adam_ppoc_lightbot_lr0.0005',
 
-    # fourrooms
-    '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_ss/betterlr_ss_ppo_fourooms_lr0.001',
-    '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_ss/betterlr_ss_ppoc_fourrooms_lr0.001',
+    # # fourrooms
+    # '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_ss/betterlr_ss_ppo_fourooms_lr0.001',
+    # '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_ss/betterlr_ss_ppoc_fourrooms_lr0.001',
 
     # hanoi
+    '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_h_eplen500_me30000_hdim256/betterlr_h_eplen500_me30000_hdim256_ppo_hanoi_2disks_lr0.0005',
 
-    # lightbot minigrid
-    '/home/mbchang/shared/ssc/rlbase/experiments/sparse500000/sparse500000_ppo_lightbot_minigrid_fractal_cross_0_lr0.001',
-    '/home/mbchang/shared/ssc/rlbase/experiments/sparse500000/sparse500000_ppoc_lightbot_minigrid_fractal_cross_0_lr0.001',
+    # # lightbot minigrid
+    # '/home/mbchang/shared/ssc/rlbase/experiments/sparse500000/sparse500000_ppo_lightbot_minigrid_fractal_cross_0_lr0.001',
+    # '/home/mbchang/shared/ssc/rlbase/experiments/sparse500000/sparse500000_ppoc_lightbot_minigrid_fractal_cross_0_lr0.001',
 ]
 
 num_gpus = 2
