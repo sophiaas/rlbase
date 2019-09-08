@@ -273,29 +273,33 @@ hanoi. Conclusion, should make the episode length longer
 #             command += ' > experiments/{}/algo_{}_config_{}_{}_lr{}.txt'.format(group, a, c,variant, r)
 #             i = execute(command, i, num_gpus)
 
-
-# minigrid
+# # hanoi
 
 algos = ['ppo', 'ppoc']
 configs = {
-    # 'hanoi': ('n_disks', ['2', '3', '4']),
-    'lightbot_minigrid': ('puzzle', ['fractal_cross_0', 'fractal_cross_1', 'fractal_cross_2']),
+    'hanoi': ('n_disks', ['2', '3', '4']),
+    # 'lightbot_minigrid': ('puzzle', ['fractal_cross_0', 'fractal_cross_1', 'fractal_cross_2']),
     # 'lightbot': (),
     # 'fourrooms': ()
 }
-lrs = [5e-4]  # could try 1e-3
+
+lrs = {
+    '2': [5e-4, 1e-3],
+    '3': [5e-4, 1e-4],
+    '4': [5e-4, 1e-4],
+}
+
+group = 'betterlr_h_eplen500_me30000_hdim256'
 
 gpu=True
 num_gpus = 4
 i = 2
 
-group = 'betterlr_lm_500000'
-
 def heading(algo, config, r, i, gpu):
     prefix = 'CUDA_VISIBLE_DEVICES={} '.format(i) if gpu else ''
     command = prefix + 'python rlbase/train.py --device 0 --name {} --algo {} --config {} --lr {}'.format(
         group, algo, config, r)
-    return command
+    return command 
 
 def execute(command, i, num_gpus):
     command += ' &'
@@ -307,17 +311,55 @@ def execute(command, i, num_gpus):
         i = 2
     return i
 
-for a, c, r in itertools.product(algos, configs.keys(), lrs):
-    # if len(configs[c]) > 0:
+for a, c in itertools.product(algos, configs.keys()):
     flag, variants = configs[c]
     for variant in variants:
-        command = heading(a, c, r, i, gpu)
-        command += ' --{} {}'.format(flag, variant)
-        command += ' > experiments/{}/algo_{}_config_{}_{}_lr{}.txt'.format(group, a, c,variant, r)
-        i = execute(command, i, num_gpus)
-    # else:
-    #     command = heading(a, c, r, i, gpu)
-    #     command += ' > experiments/{}/algo_{}_config_{}_lr{}.txt'.format(group, a, c, r)
-    #     i = execute(command, i, num_gpus)
+        for r in lrs[variant]:
+            command = heading(a, c, r, i, gpu)
+            command += ' --{} {}'.format(flag, variant)
+            command += ' > experiments/{}/algo_{}_config_{}_{}_lr{}.txt'.format(group, a, c,variant, r)
+            i = execute(command, i, num_gpus)
 
+
+# # minigrid
+
+# algos = ['ppo', 'ppoc']
+# configs = {
+#     # 'hanoi': ('n_disks', ['2', '3', '4']),
+#     'lightbot_minigrid': ('puzzle', ['fractal_cross_0', 'fractal_cross_1', 'fractal_cross_2']),
+#     # 'lightbot': (),
+#     # 'fourrooms': ()
+# }
+# lrs = [5e-4]  # could try 1e-3
+
+# gpu=True
+# num_gpus = 4
+# i = 2
+
+# group = 'betterlr_lm_500000'
+
+# def heading(algo, config, r, i, gpu):
+#     prefix = 'CUDA_VISIBLE_DEVICES={} '.format(i) if gpu else ''
+#     command = prefix + 'python rlbase/train.py --device 0 --name {} --algo {} --config {} --lr {}'.format(
+#         group, algo, config, r)
+#     return command
+
+# def execute(command, i, num_gpus):
+#     command += ' &'
+#     print(command)
+#     # os.system(command)
+
+#     i += 1
+#     if i >= num_gpus:
+#         i = 2
+#     return i
+
+# for a, c, r in itertools.product(algos, configs.keys(), lrs):
+#     # if len(configs[c]) > 0:
+#     flag, variants = configs[c]
+#     for variant in variants:
+#         command = heading(a, c, r, i, gpu)
+#         command += ' --{} {}'.format(flag, variant)
+#         command += ' > experiments/{}/algo_{}_config_{}_{}_lr{}.txt'.format(group, a, c,variant, r)
+#         i = execute(command, i, num_gpus)
 
