@@ -19,6 +19,21 @@ class BaseConfig(object):
             for key, value in kwargs.items():
                 setattr(self, key, value)
                 
+"""Evaluator Config"""
+class EvalConfig(BaseConfig):
+    
+    def __init__(self, kwargs=None):
+        self.n_eval_steps = 2000
+        self.model_dir = None
+        self.episode = 20000
+        self.max_episodes = 10000
+        self.max_episode_length = 500
+        self.render = False
+        self.device = 0
+        self.save_episode_data = True
+        self.log_interval = 20
+        self.set_attributes(kwargs)    
+                
             
 """Algorithm Config"""
 
@@ -55,6 +70,30 @@ class OCConfig(PPOConfig):
         self.n_block_samples = 10000
         self.block_ent_coeff = 0.1
         self.max_block_length = 8
+        self.set_attributes(kwargs)
+        
+        
+# class SSCConfig(PPOConfig):
+
+#     def __init__(self, kwargs=None):
+#         super().__init__()
+#         self.n_hl_actions = 
+#         self.set_attributes(kwargs)
+        
+class SSCConfig(BaseConfig):
+    
+    def __init__(self, kwargs=None):
+        super().__init__()
+        self.n_hl_actions = 12
+        self.n_learning_stages = 4
+        self.max_atoms = 12
+        self.atom_length = 2
+        self.sparsity = 0.9
+        self.selection = None
+        self.selection_criterion = None
+        self.count_criterion = None
+        self.reward_weighted = False
+        self.reward_coeff = False
         self.set_attributes(kwargs)
 
         
