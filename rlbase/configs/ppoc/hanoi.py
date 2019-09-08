@@ -19,7 +19,7 @@ algorithm = OCConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 20000,
+     'max_episodes': 30000,
     }
 )
 
