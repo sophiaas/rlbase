@@ -1,6 +1,6 @@
 import os
 import argparse
-from agents import PPO, PPOC
+from agents import PPO, PPOC, SSC
 import torch
 
 parser = argparse.ArgumentParser()
@@ -17,6 +17,8 @@ parser.add_argument('--n_disks', type=int, default=None,
                     help='number of disks for Hanoi environment')
 parser.add_argument('--device', type=int, default=0,
                     help='Device to run on') 
+parser.add_argument('--load_dir', type=str, default=None,
+                    help='Directory to load pre-trained model data from, for SSC') 
 
 args = parser.parse_args()
 
@@ -28,8 +30,9 @@ elif args.algo == 'ppoc':
     from configs.ppoc import all_configs
     agent = PPOC
     
-else:
-    raise ValueError('Specified algorithm is not yet implemented')
+elif args.algo == 'ssc':
+    from configs.ssc import all_configs
+    agent = SSC
     
 config = all_configs[args.config]
 
