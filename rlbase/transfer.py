@@ -39,7 +39,6 @@ def produce_transfer_config(config):
     config.training.device = args.device
 
     config.experiment.name += '_lr{}'.format(args.lr)
-    config.experiment.base_dir += args.name + '/'
     return config
 
 def print_config(config):
