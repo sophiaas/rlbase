@@ -28,6 +28,9 @@ class Evaluator(object):
             self.model = PPO(self.checkpoint_config)
         elif self.checkpoint_config.algorithm.name == 'PPOC':
             self.model = PPOC(self.checkpoint_config)
+        elif self.checkpoint_config.algorithm.name == 'SSC':
+            self.checkpoint_config.load_action_dir = config.model_dir
+            self.model = SSC(self.checkpoint_config)
         else:
             return ValueError('Unknown model type')
         
