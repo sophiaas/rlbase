@@ -73,9 +73,10 @@ class SSC(PPO):
         for i in reversed(range(rewards.size(0))):
             
             if action_lengths[i] > 1:
-                prev_return *= gamma ** action_lengths[i] - 1
-                prev_value *= gamma ** action_lengths[i] - 1
-                prev_advantage *= gamma ** action_lengths[i] - 1
+                prev_return *= gamma ** (action_lengths[i] - 1)
+                prev_value *= gamma ** (action_lengths[i] - 1)
+                prev_advantage *= gamma ** (action_lengths[i] - 1)
+                prev_advantage *= tau ** (action_lengths[i] - 1)
                 
             returns[i] = rewards[i] + gamma * prev_return * masks[i]
             deltas[i] = rewards[i] + gamma * prev_value * masks[i] - values[i]
