@@ -5,7 +5,6 @@ import torch.nn as nn
 from .base import BaseAgent
 from networks.actor_critic import ActorCritic
 from core.replay_buffer import Memory
-from envs import Lightbot
 
 
 """
