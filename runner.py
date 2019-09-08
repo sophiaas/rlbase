@@ -201,7 +201,7 @@ def heading(algo, config, r, i, gpu):
     prefix = 'CUDA_VISIBLE_DEVICES={} '.format(i) if gpu else ''
     command = prefix + 'python rlbase/train.py --device 0 --name {} --algo {} --config {} --lr {}'.format(
         group, algo, config, r)
-    return command
+    return command 
 
 def execute(command, i, num_gpus):
     command += ' &'

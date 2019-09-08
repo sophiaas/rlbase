@@ -128,8 +128,8 @@ class LightbotConfig(EnvConfig):
         super().__init__()
         self.name = 'lightbot'
         self.init = Lightbot
-        # self.reward_fn = "10,10,-1,-1"
-        self.reward_fn = "100,-1,-1,-1"
+        self.reward_fn = "10,10,-1,-1"
+        # self.reward_fn = "100,-1,-1,-1"
         self.puzzle_name = "cross"
         self.set_attributes(kwargs)
         
