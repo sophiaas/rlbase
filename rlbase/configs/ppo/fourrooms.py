@@ -17,7 +17,7 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {'lr': 5e-4,
+    {'lr': 1e-3,
     }
 )
 

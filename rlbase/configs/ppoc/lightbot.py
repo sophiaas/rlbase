@@ -18,7 +18,7 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'lr': 1e-3
+    {'lr': 5e-4
     }
 )
 
