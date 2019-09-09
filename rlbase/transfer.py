@@ -27,12 +27,12 @@ args = parser.parse_args()
 
 def produce_transfer_config(config):
     if args.puzzle:
-        config.experiment.name += '_{}->{}'.format(
-            checkpoint_config.env.puzzle_name, args.puzzle)
+        config.experiment.name += '_{}-to-{}_from-ep{}'.format(
+            config.env.puzzle_name, args.puzzle, args.episode)
         config.env.puzzle_name = args.puzzle
     if args.n_disks:
-        config.experiment.name += '_{}->{}'.format(
-            config.env.n_disks, args.n_disks)
+        config.experiment.name += '_{}-to-{}_from-ep{}'.format(
+            config.env.n_disks, args.n_disks, args.episode)
         config.env.n_disks = args.n_disks
 
     config.training.lr = args.lr  # new lr from before?
