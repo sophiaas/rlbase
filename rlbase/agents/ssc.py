@@ -44,10 +44,17 @@ class SSC(PPO):
         if self.config.algorithm.load_action_dir is None:
 
             self.data = load_episode_data(config.algorithm.load_dir)
-            print('action data: {}'.format(self.data.action))
+            print('action data: {}'.format(list(self.data.action)))
+            if self.env.name == 'hanoi':
+                action_data = []
+                for x in list(self.data.action):
+                    action_data += x
+                action_data = [action_data]
+            else:
+                action_data = list(self.data.action)
 
             self.compressor = HierarchicalSparseCompressor(config.algorithm)
-            self.compressor.compress(list(self.data.action))
+            self.compressor.compress(action_data)
             print('added motifs: {}'.format(self.compressor.added_motifs))
 
             self.action_dictionary = {**self.action_dictionary, **self.compressor.added_motifs}
@@ -99,15 +106,28 @@ class SSC(PPO):
         
         return advantages, returns
     
-    def test_hl_action(self, state, hl_action):
+    def test_hl_action(self, hl_action):
         valid = True
         state = copy.deepcopy(self.env.raw_state)
         for i, a in enumerate(hl_action):
             original_state = copy.deepcopy(state)
             state, test_reward, test_done = self.env.make_move(original_state, a, test=True)
-            if state == original_state:
-                valid = False
-                break  
+            if self.env.name == 'lightbot_minigrid' or self.env.name == 'lightbot':
+                mismatch = False
+                for key,val in state.items():
+                    if type(state[key]) == int or type(state[key]) == bool:
+                        if state[key] != original_state[key]:
+                            mismatch = True
+                    else:
+                        if list(state[key]) != list(original_state[key]):
+                            mismatch = True
+                if not mismatch:
+                    valid = False
+                    break
+            else:
+                if state == original_state:
+                    valid = False
+                    break  
             if test_done and i < len(hl_action) - 1:
                 valid = False
                 break
@@ -133,7 +153,7 @@ class SSC(PPO):
         action, log_prob = self.policy.act(state)
         if action.item() < self.config.env.action_dim:
             next_state, reward, done, _ = self.env.step(action.item())
-
+            self.episode_steps += 1
             if self.episode_steps == self.config.training.max_episode_length:
                 done = True
             
@@ -148,26 +168,36 @@ class SSC(PPO):
             }
             
             self.memory.push(step_data)
+            
 
         else:
             action_list = self.action_dictionary[action.item()]
             hl_action = self.uncompress_hl_action(action_list)
-            valid = self.test_hl_action(state, hl_action)
+                
+#             valid = self.test_hl_action(hl_action)
             total_reward = []
             done = False
-            if valid:
-                for a in hl_action:
-                    if done:
-                        break
-                    next_state, reward, done, _ = self.env.step(a)
-                    total_reward.append(reward)
+#             if valid:
+            for a in hl_action:
+                if done:
+                    break
+                next_state, reward, done, _ = self.env.step(a)
+                total_reward.append(reward)
+                self.episode_steps += 1
 
-                    if self.episode_steps == self.config.training.max_episode_length:
-                        done = True
-            else:
-                #NB: Hard coded!! This is not good, but will be changed later
-                total_reward = [-1] * len(action_list) 
-                next_state = state.cpu().data.numpy()
+                if self.episode_steps == self.config.training.max_episode_length:
+                    done = True
+#             else:
+#                 #NB: Hard coded!! This is not good, but will be changed later
+#                 diff = self.config.training.max_episode_length - self.episode_steps - 1
+#                 if len(action_list) > diff:
+#                     length = diff
+#                 else: 
+#                     length = len(action_list)
+#                 total_reward = [-1] * length
+#                 next_state = state.cpu().data.numpy()
+#                 self.episode_steps += length
+
                 
             step_data = {
                 'reward': total_reward, 
@@ -176,8 +206,9 @@ class SSC(PPO):
                 'action': action,
                 'logprob': log_prob,
                 'env_data': env_data,
-                'action_length': len(action_list)
+                'action_length': len(hl_action)
             }
+#             print(step_data)
         
             self.memory.push(step_data) 
         
@@ -259,7 +290,6 @@ class SSC(PPO):
                     
                 timestep += transition['action_length']
                 action_tracker += transition['action_length']
-                self.episode_steps += transition['action_length']
 
                 for key, val in transition.items():
                     episode_data[key].append(self.convert_data(val))
