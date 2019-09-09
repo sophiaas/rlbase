@@ -2,12 +2,12 @@ from core.config import *
 from torch.optim.lr_scheduler import StepLR
 from torch.optim import Adam
 from networks.heads import FullyConnectedHead
-from networks.bodies import FullyConnectedBody, ConvolutionalBody
+from networks.bodies import FullyConnectedBody
 
-HDIM = 64
+HDIM = 256
 
 experiment = ExperimentConfig(
-    {'name': 'ssc_lightbot_minigrid',
+    {'name': 'ssc_fourrooms',
      'base_dir': 'experiments/',
      'save_episode_data': True,
      'log_interval': 100,
@@ -22,28 +22,30 @@ algorithm = SSCConfig(
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,
-     'load_dir': 'experiments/sparse500000/sparse500000_ppo_lightbot_minigrid_fractal_cross_0_lr0.001/evaluate/',
-#      'load_action_dir': 'experiments/ssc_lightbot_minigrid/',
+     'load_dir': 'experiments/betterlr_ss/betterlr_ss_ppo_fourooms_lr0.001/evaluate/',
+#      'load_action_dir': 'experiments/ssc_lightbot/',
      'gamma': 0.99,
      'tau': 0.95,
-     'optim_epochs': 5,
      'clip': 0.1,
      'clip_norm': 40,
      'l2_reg': 1e-5,
-     'anneal_epochs': True
+     'anneal_epochs': True,
+     'optim_epochs': 5
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500000,
+    {'max_episode_length': 500,
      'max_episodes': 10000,
      'update_every': 4096,
+     'weight_decay': 1e-5,
      'lr_scheduler': StepLR,
      'lr': 1e-3,
      'lr_gamma': 0.99,
      'lr_step_interval': 100,
      'minibatch_size': 256,
      'optim': Adam,
+     'action_var': 0.5,
      'cuda': True,
      'device': 0
     }
@@ -67,56 +69,14 @@ value_head = FCConfig(
     }
 )
 
-"""Convolutional body """
-conv1 = ConvLayerConfig(
-    {'in_channels': 3,
-     'kernel_size': 2,
-     'stride': 1,
-     'out_channels': 16,
+body = FCConfig(
+    {'hdim': HDIM, 
+     'nlayers': 2, 
      'activation': nn.ReLU(),
-     'pool': True
+     'out_activation': nn.ReLU(),
+     'architecture': FullyConnectedBody
     }
 )
-
-conv2 = ConvLayerConfig(
-    {'in_channels': 16,
-     'kernel_size': 2,
-     'stride': 1,
-     'out_channels': 32,
-     'activation': nn.ReLU(),
-     'pool': False
-    }
-)
-
-conv3 = ConvLayerConfig(
-    {'in_channels': 32,
-     'kernel_size': 2,
-     'stride': 1,
-     'out_channels': 64,
-     'activation': nn.ReLU(),
-     'pool': False
-    }
-)
-
-fc1 = FCConfig(
-    {'hdim': HDIM,
-     'n_layers': 3,
-     'activation': nn.ReLU(),
-    }
-)
-
-body = ConvConfig({
-    'n_layers': 3,
-    'nlayers': 3,
-    'conv_layers': [conv1, conv2, conv3],
-    'fc_layers': [fc1],
-    'architecture': ConvolutionalBody,
-    'activation': nn.ReLU(),
-    'hdim': HDIM
-    }
-)
-
-""""""
 
 network = NetworkConfig(
     {'heads': {'actor': policy_head, 'critic': value_head},
@@ -124,13 +84,7 @@ network = NetworkConfig(
     }
 )
 
-env = LightbotMinigridConfig(
-    {'puzzle_name': 'fractal_cross_1',
-     'agent_view_size': 7,
-     'toggle_ontop': False,
-     'reward_fn': '100,-1,-1,-1'
-    }
-)
+env = FourRoomsConfig()
 
 config = Config(
     {'experiment': experiment, 

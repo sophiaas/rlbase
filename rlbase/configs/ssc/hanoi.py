@@ -4,7 +4,7 @@ from torch.optim import Adam
 from networks.heads import FullyConnectedHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 512
+HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ssc_hanoi',
@@ -17,26 +17,31 @@ experiment = ExperimentConfig(
 )
 
 algorithm = SSCConfig(
-    {'n_hl_actions': 8,
-     'n_learning_stages': 12,
+    {'n_hl_actions': 10,
+     'n_learning_stages': 10,
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,
 #      'load_dir': 'experiments/ssc_hanoi/'
-     'load_dir': 'experiments/test_ppo_hanoi/evaluate/'
-#      'load_action_dir': 'experiments/ssc_hanoi/'
+     'load_dir': 'experiments/betterlr_h_eplen500_me30000_hdim256/betterlr_h_eplen500_me30000_hdim256_ppo_hanoi_2disks_lr0.0005/evaluate/',
+#      'load_action_dir': 'experiments/orig_10hl_ssc_hanoi/',
+     'gamma': 0.99,
+     'tau': 0.95,
+     'clip': 0.1,
+     'clip_norm': 40,
+     'l2_reg': 1e-5
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
+    {'max_episode_length': 500,
      'max_episodes': 10000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
-     'lr': 1e-3,
-     'lr_gamma': 0.85,
-     'lr_step_interval': 20,
-     'minibatch_size': 50,
+     'lr': 5e-4,
+     'lr_gamma': 0.99,
+     'lr_step_interval': 100,
+     'minibatch_size': 256,
      'optim': Adam,
      'cuda': True,
      'device': 0
@@ -63,7 +68,7 @@ value_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, 
+     'nlayers': 2, 
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody
