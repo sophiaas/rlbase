@@ -54,6 +54,8 @@ class PPOConfig(AlgorithmConfig):
         self.clip = 0.1
         self.clip_norm = 40
         self.l2_reg = 1e-5
+        self.gamma = 0.99
+        self.tau = 0.95
         self.anneal_epochs = True
         self.set_attributes(kwargs)
     
@@ -73,27 +75,22 @@ class OCConfig(PPOConfig):
         self.set_attributes(kwargs)
         
         
-# class SSCConfig(PPOConfig):
-
-#     def __init__(self, kwargs=None):
-#         super().__init__()
-#         self.n_hl_actions = 
-#         self.set_attributes(kwargs)
-        
-class SSCConfig(BaseConfig):
+class SSCConfig(PPOConfig):
     
     def __init__(self, kwargs=None):
         super().__init__()
-        self.n_hl_actions = 12
+        self.n_hl_actions = 4
         self.n_learning_stages = 4
-        self.max_atoms = 12
+        self.max_atoms = 20
         self.atom_length = 2
         self.sparsity = 0.9
-        self.selection = None
-        self.selection_criterion = None
+        self.selection = 'choose_n'
+        self.selection_criterion = 1
         self.count_criterion = None
         self.reward_weighted = False
         self.reward_coeff = False
+        self.load_dir = None
+        self.load_action_dir = None
         self.set_attributes(kwargs)
 
         

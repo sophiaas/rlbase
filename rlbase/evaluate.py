@@ -22,7 +22,6 @@ config = EvalConfig({'n_eval_steps': args.n_eval_steps,
                      'device': args.device,
                      'episode': args.episode
                     })
-    
 
 def main():
     evaluator = Evaluator(config)
