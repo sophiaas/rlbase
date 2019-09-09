@@ -72,7 +72,7 @@ wwwwwwwwwwwww
         x[value] = 1
         return x
 
-    def make_move(self, action):
+    def make_move(self, action, test=False):
         nextcell = tuple(self.currentcell + self.directions[action])
         if not self.occupancy[nextcell]:
             self.currentcell = nextcell
