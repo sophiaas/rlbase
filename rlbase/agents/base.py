@@ -131,7 +131,13 @@ class BaseAgent(object):
                 self.update_running(running_reward/10, avg_length/10)
                 running_reward = 0
                 avg_length = 0
-                self.logger.push(self.get_summary())
+                summary = {
+                    'steps': timestep
+                    'return': episode_reward
+                    'moves': self.episode_steps
+                }
+                self.logger.push(summary)
+                # self.logger.push(self.get_summary())
                 
             self.episode_steps = 0
             self.episode += 1
