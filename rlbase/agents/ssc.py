@@ -26,13 +26,14 @@ class SSC(BaseAgent):
                                        'env_data'])
         
         self.config.network.body.indim = self.config.env.obs_dim
-
-        if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
-            with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
-                self.action_dictionary = pickle.load(f)
-            full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
-            self.config.network.heads['actor'].outdim = full_action_dim
-            self.config.algorithm.n_actions = full_action_dim                                                                       
+        
+        if config.algorithm.load_dir is not None:
+            if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
+                with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
+                    self.action_dictionary = pickle.load(f)
+                full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
+                self.config.network.heads['actor'].outdim = full_action_dim
+                self.config.algorithm.n_actions = full_action_dim                                                                       
         else:
             self.action_dictionary = {}
             self.config.network.heads['actor'].outdim = config.env.action_dim \
@@ -181,7 +182,7 @@ class SSC(BaseAgent):
             step_data = {
                 'reward': total_reward, 
                 'mask': 0 if done else 1,
-                'state': starting_state,
+                'state': state,
                 'action': action,
                 'logprob': log_prob,
                 'env_data': env_data,
@@ -310,11 +311,21 @@ class SSC(BaseAgent):
                 
             avg_length += self.episode_steps
             
+#             if i_episode % 10 == 0:
+#                 self.update_running(running_reward/10, avg_length/10)
+#                 running_reward = 0
+#                 avg_length = 0
+#                 self.logger.push(self.get_summary())
             if i_episode % 10 == 0:
                 self.update_running(running_reward/10, avg_length/10)
                 running_reward = 0
                 avg_length = 0
-                self.logger.push(self.get_summary())
+                summary = {
+                    'steps': timestep
+                    'return': episode_reward
+                    'moves': self.episode_steps
+                }
+                self.logger.push(summary)
                 
             self.episode_steps = 0
             self.episode += 1
