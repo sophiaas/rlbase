@@ -23,8 +23,8 @@ algorithm = SSCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_timesteps': 500000,
+    {'max_episode_length': 5000000,
+     'max_timesteps': 5000000,
     }
 )
 
