@@ -10,7 +10,7 @@ experiment = ExperimentConfig(
     {'name': 'ppo_lightbot',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 100,
+     'log_interval': 20,
      'every_n_episodes': 100,
      'debug': True
     }
@@ -27,7 +27,7 @@ algorithm = PPOConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 100,
-     'max_episodes': 10000,
+     'max_timesteps': 500000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,

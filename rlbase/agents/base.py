@@ -29,9 +29,6 @@ class BaseAgent(object):
         
         self.model = None
         self.policy = None
-       
-        self.running_rewards = None
-        self.running_moves = None
         
         self.episode = 1
         self.episode_steps = 0
@@ -46,26 +43,8 @@ class BaseAgent(object):
         else:
             return x
 
-#     def get_summary(self):
-#         summary = {
-#             'episode': int(self.episode)-50,
-#             'running_rewards': self.running_rewards,
-#             'running_moves': self.running_moves
-#             }
-#         return summary
-            
-    def update_running(self, episode_rewards, episode_moves, timestep):
-        if timestep == 50:
-            self.running_rewards = episode_rewards   
-            self.running_moves = episode_moves
-        else:
-            self.running_rewards = self.running_rewards * 0.99 + episode_rewards * 0.01
-            self.running_moves = self.running_moves * 0.99 + episode_moves * 0.01
-
     def train(self):
         # TODO: Add handle resumes
-        running_reward = 0
-        avg_length = 0
         timestep = 0
         self.episode_steps = 0
         
@@ -73,16 +52,10 @@ class BaseAgent(object):
         episode_data = defaultdict(list, {'episode': int(self.episode)})
         state = self.env.reset()
 
-        # Iterate through episodes
+        # Iterate through timesteps
         print('Max Timesteps: {}'.format(self.config.training.max_timesteps))
         for timestep in range(1, self.config.training.max_timesteps+1):
-            
-#         for i_episode in range(1, self.config.training.max_episodes+1):
 
-            
-            # Iterate through steps
-#             for t in range(1, self.config.training.max_episode_length+1):
-#                 timestep += 1
             self.episode_steps += 1
             state = torch.from_numpy(state).float().to(self.device)
 
@@ -93,7 +66,6 @@ class BaseAgent(object):
                 episode_data[key].append(self.convert_data(val))
 
             episode_reward += transition['reward']
-            running_reward += transition['reward']
 
             if self.config.experiment.render:
                 self.env.render()
@@ -126,7 +98,6 @@ class BaseAgent(object):
 
                     self.logger.plot('return')
                     self.logger.plot('moves')
-                avg_length += self.episode_steps
                 self.episode += 1
                 self.episode_steps = 0
                 episode_reward = 0
@@ -134,17 +105,6 @@ class BaseAgent(object):
             if timestep % self.config.training.update_every == 0:
                 self.update()
                 self.memory.clear()
-                
-             
-
-                
-
-            if timestep % 50 == 0:
-                self.update_running(running_reward/50, avg_length/50, timestep)
-                running_reward = 0
-                avg_length = 0
-
-                
             
         print('Training complete')
         

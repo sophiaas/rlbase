@@ -25,7 +25,7 @@ algorithm = OCConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 20000,
+     'max_timesteps': 500000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,

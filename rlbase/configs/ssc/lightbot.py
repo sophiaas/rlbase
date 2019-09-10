@@ -10,8 +10,8 @@ experiment = ExperimentConfig(
     {'name': 'ssc_lightbot',
      'base_dir': 'experiments/',
      'save_episode_data': True,
-     'log_interval': 100,
-     'every_n_episodes': 100,
+     'log_interval': 20,
+     'every_n_episodes': 1,
      'debug': True
     }
 )
@@ -23,7 +23,7 @@ algorithm = SSCConfig(
      'selection': 'choose_n',
      'selection_criterion': 1,
      'load_dir': 'experiments/adam_ppo_lightbot_lr0.0001/evaluate/',
-#      'load_action_dir': 'experiments/orig_10hl_ssc_lightbot/',
+     'load_action_dir': 'experiments/ll_only_10hl_ssc_lightbot/',
      'gamma': 0.99,
      'tau': 0.95,
      'clip': 0.1,
@@ -35,8 +35,8 @@ algorithm = SSCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_episodes': 10000,
+    {'max_episode_length': 100,
+     'max_timesteps': 500000,
      'update_every': 4096,
      'weight_decay': 1e-5,
      'lr_scheduler': StepLR,

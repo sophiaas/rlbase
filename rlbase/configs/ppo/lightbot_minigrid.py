@@ -26,8 +26,8 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_episodes': 10000,
+    {'max_episode_length': 100,
+     'max_timesteps': 500000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'lr': 1e-3,

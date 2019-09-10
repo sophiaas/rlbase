@@ -19,7 +19,8 @@ class Logger(object):
         self.episode_data = pd.DataFrame()
         self.data_saved = False
         self.episode_data_saved = False
-        self.episode = 0
+#         self.episode = 0
+        self.timestep = 0
         
         if self.config.experiment.resume:
             assert os.path.exists(self.logdir)
@@ -54,7 +55,8 @@ class Logger(object):
 
     def push(self, data):
         self.data = self.data.append(data, ignore_index=True)
-        self.episode = int(self.data['episode'].iloc[-1])
+#         self.episode = int(self.data['episode'].iloc[-1])
+        self.timestep = int(self.data['steps'].iloc[-1])
 
     def push_episode_data(self, episode_data):
         self.episode_data = self.episode_data.append(episode_data, ignore_index=True)
@@ -65,9 +67,9 @@ class Logger(object):
     def load(self, name):
         self.data = pd.read_csv(self.logdir+'summary.p')
     
-    def save_episode_data(self):
+    def save_episode_data(self, episode):
         self.episode_data.to_pickle(self.episodedir
-                                    +'episode_data_{}.p'.format(self.episode))
+                                    +'episode_data_{}.p'.format(episode))
         self.episode_data.drop(self.episode_data.index, inplace=True)
 
         
@@ -82,8 +84,8 @@ class Logger(object):
         
     def plot(self, variable):
         every_n = self.config.experiment.plot_granularity
-        plt.plot(self.data['episode'][::every_n], self.data[variable][::every_n])
-        plt.xlabel('episode')
+        plt.plot(self.data['steps'][::every_n], self.data[variable][::every_n])
+        plt.xlabel('steps')
         plt.ylabel(variable)
         plt.savefig(os.path.join(self.logdir,'{}.png'.format(variable)))
         plt.clf()
