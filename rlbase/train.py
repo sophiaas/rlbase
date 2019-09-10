@@ -55,6 +55,7 @@ if args.n_disks:
 
 config.training.lr = args.lr
 config.experiment.name += '_lr{}'.format(args.lr)
+config.experiment.name += '_steps'
 config.experiment.name += '_seed{}'.format(args.seed)
 
 config.experiment.base_dir += args.name + '/'

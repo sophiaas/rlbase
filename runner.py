@@ -292,7 +292,7 @@ def launch_hanoi():
         '3': [5e-4],
         '4': [5e-4],
     }
-    seeds = [0, 1, 2]
+    seeds = [3,4,5]
 
     group = 'betterlr_h_eplen500_me30000_hdim256_seeds'
 
@@ -334,7 +334,7 @@ def launch_minigrid():
         'lightbot_minigrid': ('puzzle', ['fractal_cross_0', 'fractal_cross_1', 'fractal_cross_2']),
     }
     lrs = [5e-4]  # could try 1e-3
-    seeds = [0, 1, 2]
+    seeds = [3,4,5]
 
     gpu=True
     num_gpus = 4
