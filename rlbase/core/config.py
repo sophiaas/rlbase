@@ -105,8 +105,11 @@ class TrainingConfig(BaseConfig):
         self.lr_scheduler = StepLR
         self.betas = (0.9, 0.999)
         self.minibatch_size = 256
-        self.max_episode_length = 100
-        self.max_episodes = 10000
+        # self.max_episode_length = 100
+        # self.max_episodes = 10000
+        # self.timesteps = 500000
+        self.max_episode_length = 5000000
+        self.timesteps = 5000000
         self.update_every = 4096
         self.lr_gamma = 0.99
         self.lr_step_interval = 100

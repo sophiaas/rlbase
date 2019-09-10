@@ -39,7 +39,6 @@ class Lightbot(gym.Env):
         # Seed is not needed because the environment is deterministic
         self.set_reward_fn(*[float(x) for x in config.reward_fn.split(',')])
         self.state = self.reset()
-        self.name = 'lightbot'
         
     def index_to_onehot(self, value, dim):
         x = np.zeros(dim)
@@ -62,7 +61,6 @@ class Lightbot(gym.Env):
          'coords': (1, 4),
          'light_idx': -1, # in [-1, 0, 1, 2] # where the largest number is the idx in lights_on
          'height': 0},  # a scalar starting from 0
-
         """
         lights_on = raw_state['lights_on']  # (self.num_lights)
         direction = self.index_to_onehot(raw_state['direction'], 4)
@@ -143,7 +141,7 @@ class Lightbot(gym.Env):
         data = self.get_data()
         return copy.deepcopy(self.state), copy.deepcopy(self.reward), copy.deepcopy(self.done), data
 
-    def make_move(self, state, action, test=False):
+    def make_move(self, state, action):
         state = copy.deepcopy(state)
         # actions: {0: 'light', 1: 'jump', 2: 'walk', 3: 'turn_r', 4: 'turn_l'}
         start_num_lights_on = np.sum(state['lights_on'])

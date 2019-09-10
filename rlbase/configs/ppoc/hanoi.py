@@ -18,8 +18,9 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_episodes': 30000,
+    {
+     # 'max_episode_length': 500,
+     # 'max_timesteps': 500000,
     }
 )
 

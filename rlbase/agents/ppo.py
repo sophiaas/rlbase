@@ -67,7 +67,6 @@ class PPO(BaseAgent):
         masks = torch.tensor(self.memory.mask).to(self.device)
         rewards = torch.tensor(self.memory.reward).to(self.device)
         old_logprobs = torch.stack(self.memory.logprob).to(self.device)
-
         with torch.no_grad():
             values = self.policy.critic_forward(states)
             advantages, returns = self.discounted_advantages(rewards, masks, values)

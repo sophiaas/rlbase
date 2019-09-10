@@ -25,15 +25,18 @@ class SSC(BaseAgent):
                                        'action', 'logprob', 'value', 'action_length',
                                        'env_data'])
         
-        self.config.network.body.indim = self.config.env.obs_dim
+        self.hl_memory = Memory(features=['reward', 'mask', 'state', 'end_state', 
+                                       'action', 'logprob', 'value', 'action_length',
+                                       'env_data'])
         
-        if config.algorithm.load_dir is not None:
-            if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
-                with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
-                    self.action_dictionary = pickle.load(f)
-                full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
-                self.config.network.heads['actor'].outdim = full_action_dim
-                self.config.algorithm.n_actions = full_action_dim                                                                       
+        self.config.network.body.indim = self.config.env.obs_dim
+
+        if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
+            with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
+                self.action_dictionary = pickle.load(f)
+            full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
+            self.config.network.heads['actor'].outdim = full_action_dim
+            self.config.algorithm.n_actions = full_action_dim                                                                       
         else:
             self.action_dictionary = {}
             self.config.network.heads['actor'].outdim = config.env.action_dim \
@@ -167,10 +170,18 @@ class SSC(BaseAgent):
                 
             total_reward = []
             done = False
-            for a in hl_action:
+            starting_state = copy.deepcopy(state)
+            for j,a in enumerate(hl_action):
                 if done:
                     break
-                                
+                if j == 0:
+                    state_tensor = starting_state
+                else:
+                    state_tensor = torch.tensor(state).float().to(self.device)
+                action_tensor = torch.tensor(a).to(self.device)
+                
+                ll_logprob, ll_value, _ = self.policy.evaluate(state_tensor, action_tensor)  
+                
                 next_state, reward, done, _ = self.env.step(a)
                 
                 total_reward.append(reward)
@@ -178,30 +189,50 @@ class SSC(BaseAgent):
                 
                 if self.episode_steps == self.config.training.max_episode_length:
                     done = True
+                    
+                ll_step_data = {
+                    'reward': reward, 
+                    'mask': bool(not done),
+                    'state': state_tensor,
+                    'action': action_tensor,
+                    'logprob': torch.squeeze(ll_logprob),
+                    'env_data': env_data,
+                    'action_length': 1
+                }
+                state = next_state
+                
+                self.memory.push(ll_step_data)
                 
             step_data = {
                 'reward': total_reward, 
                 'mask': 0 if done else 1,
-                'state': state,
+                'state': starting_state,
                 'action': action,
                 'logprob': log_prob,
                 'env_data': env_data,
                 'action_length': len(hl_action)
             }
         
-            self.memory.push(step_data) 
+            self.hl_memory.push(step_data) 
         
         return step_data, next_state, done
  
 
     def update(self):   
         # Convert list to tensor
-        states = torch.stack(self.memory.state).to(self.device)
-        actions = torch.stack(self.memory.action).to(self.device)
-        masks = torch.tensor(self.memory.mask).to(self.device)
-        rewards = self.memory.reward
-        action_lengths = torch.tensor(self.memory.action_length).to(self.device)
-        old_logprobs = torch.stack(self.memory.logprob).to(self.device)
+#         states = torch.stack(self.memory.state).to(self.device)
+#         actions = torch.stack(self.memory.action).to(self.device)
+#         masks = torch.tensor(self.memory.mask).to(self.device)
+#         rewards = self.memory.reward
+#         action_lengths = torch.tensor(self.memory.action_length).to(self.device)
+#         old_logprobs = torch.stack(self.memory.logprob).to(self.device)
+
+        states = torch.stack(self.memory.state+self.hl_memory.state).to(self.device)
+        actions = torch.stack(self.memory.action+self.hl_memory.action).to(self.device)
+        masks = torch.tensor(self.memory.mask+self.hl_memory.mask).to(self.device)
+        rewards = self.memory.reward + self.hl_memory.reward
+        action_lengths = torch.tensor(self.memory.action_length+self.hl_memory.action_length).to(self.device)
+        old_logprobs = torch.stack(self.memory.logprob+self.hl_memory.logprob).to(self.device)
 
         with torch.no_grad():
             values = self.policy.critic_forward(states)
@@ -311,21 +342,11 @@ class SSC(BaseAgent):
                 
             avg_length += self.episode_steps
             
-#             if i_episode % 10 == 0:
-#                 self.update_running(running_reward/10, avg_length/10)
-#                 running_reward = 0
-#                 avg_length = 0
-#                 self.logger.push(self.get_summary())
             if i_episode % 10 == 0:
                 self.update_running(running_reward/10, avg_length/10)
                 running_reward = 0
                 avg_length = 0
-                summary = {
-                    'steps': timestep
-                    'return': episode_reward
-                    'moves': self.episode_steps
-                }
-                self.logger.push(summary)
+                self.logger.push(self.get_summary())
                 
             self.episode_steps = 0
             self.episode += 1

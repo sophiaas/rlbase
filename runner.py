@@ -294,7 +294,7 @@ def launch_hanoi():
     }
     seeds = [3,4,5]
 
-    group = 'betterlr_h_eplen500_me30000_hdim256_seeds'
+    group = 'betterlr_h_eplen500_me30000_hdim256_seeds_steps'
 
     gpu=True
     num_gpus = 2
@@ -340,7 +340,7 @@ def launch_minigrid():
     num_gpus = 4
     i = 2
 
-    group = 'betterlr_lm_500000_seeds'
+    group = 'betterlr_lm_500000_seeds_steps'
 
     def heading(algo, config, r, i, s, gpu):
         prefix = 'CUDA_VISIBLE_DEVICES={} '.format(i) if gpu else ''

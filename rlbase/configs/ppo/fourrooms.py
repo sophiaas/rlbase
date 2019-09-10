@@ -17,7 +17,9 @@ algorithm = PPOConfig(
 )
 
 training = TrainingConfig(
-    {'lr': 1e-3,
+    {
+    # 'lr': 1e-3,
+     # 'max_timesteps': 500000,
     }
 )
 

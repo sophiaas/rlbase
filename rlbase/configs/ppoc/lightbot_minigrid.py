@@ -18,7 +18,9 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500000,
+    {
+    # 'max_episode_length': 500000,
+    # 'max_timesteps': 500000,
     }
 )
 
@@ -114,7 +116,14 @@ network = NetworkConfig(
 )
 
 env = LightbotMinigridConfig(
+<<<<<<< HEAD
     {
+=======
+    {'puzzle_name': 'fractal_cross_0',
+     'agent_view_size': 7,
+     'toggle_ontop': False,
+     'reward_fn': '100,-1,-1,-1'
+>>>>>>> master
     }
 )
 

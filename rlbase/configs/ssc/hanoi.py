@@ -8,11 +8,6 @@ HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ssc_hanoi',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'log_interval': 100,
-     'every_n_episodes': 1,
-     'debug': True
     }
 )
 
@@ -22,35 +17,20 @@ algorithm = SSCConfig(
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,
-#      'load_dir': 'experiments/ssc_hanoi/'
-     'load_dir': 'experiments/betterlr_h_eplen500_me30000_hdim256/betterlr_h_eplen500_me30000_hdim256_ppo_hanoi_2disks_lr0.0005/evaluate/',
-#      'load_action_dir': 'experiments/orig_10hl_ssc_hanoi/',
-     'gamma': 0.99,
-     'tau': 0.95,
-     'clip': 0.1,
-     'clip_norm': 40,
-     'l2_reg': 1e-5
+     'load_dir': None,
+     'load_action_dir': 'rlbase/action_dictionaries/',
     }
 )
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 10000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 5e-4,
-     'lr_gamma': 0.99,
-     'lr_step_interval': 100,
-     'minibatch_size': 256,
-     'optim': Adam,
-     'cuda': True,
-     'device': 0
+     'max_timesteps': 500000,
     }
 )
 
 policy_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'activation': nn.ReLU(),
      'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead
@@ -59,7 +39,7 @@ policy_head = FCConfig(
 
 value_head = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1, #1
+     'nlayers': 1,
      'out_activation': None,
      'architecture': FullyConnectedHead,
      'outdim': 1
@@ -80,13 +60,9 @@ network = NetworkConfig(
      'body': body
     }
 )
-
+    
 env = HanoiConfig(
-    {'n_disks': 3,
-     'n_pegs': 3,
-     'initial_peg': None,
-     'continual': True,
-     'reward_fn': '100,-1'
+    {
     }
 )
 
@@ -99,3 +75,14 @@ config = Config(
     }
 )
 
+def post_process(config):
+    # post processing
+    if config.env.n_disks == 2:
+        print('000')
+    elif config.env.n_disks == 3:
+        print('111')
+    elif config.env.n_disks == 4:
+        print('222')
+    else:
+        assert False
+    return config

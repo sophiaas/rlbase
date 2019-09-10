@@ -36,7 +36,7 @@ algorithm = SSCConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 500,
-     'max_episodes': 10000,
+     'max_timesteps': 500000,
      'update_every': 4096,
      'weight_decay': 1e-5,
      'lr_scheduler': StepLR,
