@@ -1,6 +1,6 @@
 import os
 import argparse
-from agents import PPO, PPOC, SSC
+from agents import PPO, PPOC#, SSC
 import torch
 
 parser = argparse.ArgumentParser()
@@ -18,7 +18,9 @@ parser.add_argument('--n_disks', type=int, default=None,
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
 parser.add_argument('--device', type=int, default=-1,
-                    help='Device to run on') 
+                    help='Device to run on')
+parser.add_argument('--seed', type=int, default=0,
+                    help='seed') 
 parser.add_argument('--load_dir', type=str, default=None,
                     help='Directory to load pre-trained model data from, for SSC') 
 
@@ -50,8 +52,11 @@ if args.n_disks:
     config.env.n_disks = args.n_disks
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
 
+
 config.training.lr = args.lr
 config.experiment.name += '_lr{}'.format(args.lr)
+config.experiment.name += '_seed{}'.format(args.seed)
+
 config.experiment.base_dir += args.name + '/'
 
 if args.device >= 0:
