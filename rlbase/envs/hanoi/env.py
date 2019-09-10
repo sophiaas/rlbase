@@ -33,7 +33,6 @@ class Hanoi(gym.Env):
         self.state = self.reset()
         self.observation_space = spaces.Discrete(len(self.state))
         self.verbose = verbose
-        self.name = 'hanoi'
         if verbose:
             print("Hanoi Environment Parameters have been set to:")
             print("\t Number of Disks: {}".format(self.num_disks))
