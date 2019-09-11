@@ -4,7 +4,9 @@ import itertools
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--zip', action='store_true')
+parser.add_argument('--zipall', action='store_true')
 parser.add_argument('--for-real', action='store_true')
+parser.add_argument('--root', type=str, default='')
 args = parser.parse_args()
 
 model_dirs = {
@@ -54,8 +56,24 @@ def zip_folders():
         if args.for_real:
             os.system(command)
 
+def zip_all(root):
+    for folder in os.listdir(root):
+        if '.zip' not in folder and 'zipped' not in folder:
+            command = 'zip -r {}.zip {} &'.format(
+                os.path.join(root,'zipped',folder), os.path.join(root,folder))
+            print(command)
+            if args.for_real:
+                os.system(command)
+
 if __name__ == '__main__':
     if args.zip:
         zip_folders()
+    elif args.zipall:
+        roots = [
+            '/Users/michaelchang/Documents/Researchlink/Berkeley/sophia/rlbase/rlbase/experiments/server/lbot_minigrid_maxsteps5000000_seeds',
+            '/Users/michaelchang/Documents/Researchlink/Berkeley/sophia/rlbase/rlbase/experiments/server/hanoi_maxteps5000000_seeds',
+        ]
+        for root in roots:
+            zip_all(root)
     else:
         evaluate()
