@@ -138,9 +138,9 @@ class ExperimentConfig(BaseConfig):
      def __init__(self, kwargs=None):
         self.name = ""
         self.seed = 543
-        self.log_interval = 20
+        self.log_interval = 100
         self.every_n_episodes = 100
-        self.num_steps_between_plot = 100
+        self.num_steps_between_plot = 1000
         self.save_episode_data = True
         self.base_dir = 'experiments/'
         self.render = False
