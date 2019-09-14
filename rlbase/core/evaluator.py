@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import pickle
-from agents import PPO, PPOC
+from agents import PPO, PPOC, SSC
 from collections import defaultdict
 import os
 
@@ -22,7 +22,8 @@ class Evaluator(object):
         self.checkpoint_config.experiment.render = config.render
         self.checkpoint_config.experiment.save_episode_data = config.save_episode_data
         self.checkpoint_config.experiment.log_interval = config.log_interval
-
+        
+        print(self.checkpoint_config.algorithm.name)
             
         if self.checkpoint_config.algorithm.name == 'PPO':
             self.model = PPO(self.checkpoint_config)

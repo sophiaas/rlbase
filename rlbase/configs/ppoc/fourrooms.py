@@ -13,12 +13,15 @@ experiment = ExperimentConfig(
 )
 
 algorithm = OCConfig(
-    {
+    {'dc': 0, #deliberation cost
+     'n_options': 8,
+     'gamma': 0.99,
+     'tau': 0.95
     }
 )
 
 training = TrainingConfig(
-    {'lr': 1e-3,
+    {'lr': 1e-3
     }
 )
 
