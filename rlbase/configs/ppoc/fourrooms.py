@@ -9,9 +9,6 @@ HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_fourrooms',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'debug': True
     }
 )
 
@@ -24,17 +21,7 @@ algorithm = OCConfig(
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 100,
-     'max_timesteps': 100000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'minibatch_size': 50,
-     'lr': 1e-3,
-     'lr_step_interval': 20,
-     'lr_gamma': 0.8,
-     'optim': Adam,
-     'cuda': True,
-     'device': 1
+    {'lr': 1e-3
     }
 )
 
@@ -80,7 +67,7 @@ termination_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
+     'nlayers': 2,
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,
@@ -108,4 +95,7 @@ config = Config(
      'env': env
     }
 )
+
+def post_process(config):
+    return config
 

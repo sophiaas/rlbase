@@ -1,11 +1,18 @@
-from configs.ppoc.fourrooms import config as fc
-from configs.ppoc.lightbot import config as l
-from configs.ppoc.lightbot_minigrid import config as lm
-from configs.ppoc.hanoi import config as h
+from configs.ppoc.fourrooms import config as fc, post_process as fc_pp
+from configs.ppoc.lightbot import config as l, post_process as l_pp
+from configs.ppoc.lightbot_minigrid import config as lm, post_process as lm_pp
+from configs.ppoc.hanoi import config as h, post_process as h_pp
 
 all_configs = {
     'fourrooms': fc,
     'lightbot': l,
     'lightbot_minigrid': lm,
     'hanoi': h
+}
+
+all_post_processors = {
+    'fourrooms': fc_pp,
+    'lightbot': l_pp,
+    'lightbot_minigrid': lm_pp,
+    'hanoi': h_pp
 }

@@ -105,10 +105,18 @@ class TrainingConfig(BaseConfig):
         self.lr_scheduler = StepLR
         self.betas = (0.9, 0.999)
         self.minibatch_size = 256
-        self.max_episode_length = 100
-        self.timesteps = 500000
+        # self.max_episode_length = 100
+        # self.max_episodes = 10000
+        # self.timesteps = 500000
+        # self.max_episode_length = 5000000
+        # self.max_timesteps = 5000000
+
+        self.max_episode_length = 500000
+        self.max_timesteps = 500000
+
         self.update_every = 4096
-        self.lr_gamma = 0.99
+        # self.lr_gamma = 0.99
+        self.lr_gamma = 0.95
         self.lr_step_interval = 100
         self.action_var = 0.5 # for continuous action spaces
         self.cuda = True
@@ -132,6 +140,7 @@ class ExperimentConfig(BaseConfig):
         self.seed = 543
         self.log_interval = 20
         self.every_n_episodes = 100
+        self.num_steps_between_plot = 100
         self.save_episode_data = True
         self.base_dir = 'experiments/'
         self.render = False

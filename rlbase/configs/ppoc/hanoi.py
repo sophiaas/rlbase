@@ -1,39 +1,26 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody
 
-HDIM = 512
+HDIM = 256
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_hanoi',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
-     'gamma': 0.99,
-     'tau': 0.95
+    {
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_timesteps': 500000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 1e-3,
-     'lr_gamma': 0.85,
-     'lr_step_interval': 10,
-     'optim': Adam,
-     'cuda': True,
-     'device': 0
+    {
+     # 'max_episode_length': 500,
+     # 'max_timesteps': 500000,
     }
 )
 
@@ -41,7 +28,7 @@ actor_head = FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': OptionCriticHead,
      'outdim': None, # num actions
      'n_options': None
@@ -52,7 +39,7 @@ option_actor_head =  FCConfig(
     {'hdim': HDIM, 
      'nlayers': 1,
      'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1), # make sure softmax happens over the right dimension
+     'out_activation': nn.Softmax(dim=-1),
      'architecture': FullyConnectedHead,
      'outdim': None # num options
     }
@@ -79,7 +66,7 @@ termination_head = FCConfig(
 
 body = FCConfig(
     {'hdim': HDIM, 
-     'nlayers': 1,
+     'nlayers': 2,
      'activation': nn.ReLU(),
      'out_activation': nn.ReLU(),
      'architecture': FullyConnectedBody,
@@ -98,11 +85,7 @@ network = NetworkConfig(
 )
 
 env = HanoiConfig(
-    {'num_disks': 2,
-     'num_pegs': 3,
-     'initial_peg': None,
-     'continual': True,
-     'reward_fn': '100,-1'
+    {
     }
 )
 
@@ -114,4 +97,16 @@ config = Config(
      'env': env
     }
 )
+
+def post_process(config):
+    # post processing
+    if config.env.n_disks == 2:
+        print('000')
+    elif config.env.n_disks == 3:
+        print('111')
+    elif config.env.n_disks == 4:
+        print('222')
+    else:
+        assert False
+    return config
 

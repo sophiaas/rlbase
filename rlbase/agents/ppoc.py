@@ -115,13 +115,7 @@ class PPOC(BaseAgent):
                     option_logprobs = self.policy.evaluate_option(states[idxs], options[idxs])
                     option_values = self.policy.critic_forward(states[idxs], options[idxs])
                     term_probs = self.policy.term_forward(states[idxs], options[idxs])
-                    
-#                     print('action_logprobs: {}'.format(action_logprobs.shape))
-#                     print('option_logprobs: {}'.format(option_logprobs.shape))
-#                     print('option_values: {}'.format(option_values.shape))
-#                     print('term_probs: {}'.format(term_probs.shape))
-#                     print('advantages: {}'.format(advantages.shape))
-#                     print('term_advantages: {}'.format(term_advantages.shape))
+                
                     
 
 

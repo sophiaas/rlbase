@@ -1,41 +1,26 @@
 from core.config import *
 from torch.optim.lr_scheduler import StepLR
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 import torch.nn.functional as F
 from networks.heads import FullyConnectedHead, OptionCriticHead
 from networks.bodies import FullyConnectedBody, ConvolutionalBody
 
-# HDIM = 512
 HDIM = 64
 
 experiment = ExperimentConfig(
     {'name': 'ppoc_lightbot_minigrid',
-     'base_dir': 'experiments/',
-     'save_episode_data': True,
-     'log_interval': 20,#100,
-     'debug': True
     }
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
-     'gamma': 0.99,
-     'tau': 0.95
+    {
     }
 )
 
 training = TrainingConfig(
-    {'max_episode_length': 500,
-     'max_timesteps': 500000,
-     'update_every': 4096,
-     'lr_scheduler': StepLR,
-     'lr': 1e-3,  # TODO MC
-     'lr_gamma': 0.85,  # TODO MC
-     'lr_step_interval': 10,  # TODO MC
-     'optim': Adam, # TODO MC
-     'cuda': True,
-     'device': 0
+    {
+    # 'max_episode_length': 500000,
+    # 'max_timesteps': 500000,
     }
 )
 
@@ -79,16 +64,6 @@ termination_head = FCConfig(
     }
 )
 
-# body = FCConfig(
-#     {'hdim': HDIM, 
-#      'nlayers': 1,
-#      'activation': nn.ReLU(),
-#      'out_activation': nn.ReLU(),
-#      'architecture': FullyConnectedBody,
-#      'indim': None # observation dim
-#     }
-# )
-
 """Convolutional body """
 conv1 = ConvLayerConfig(
     {'in_channels': 3,
@@ -120,19 +95,6 @@ conv3 = ConvLayerConfig(
     }
 )
 
-# fc1 = FCConfig(
-#     {'hdim': 128,
-#      'n_layers': 1,
-#      'activation': nn.ReLU(),
-#     }
-# )
-# fc1 = FCConfig(
-#     {'hdim': HDIM,
-#      'n_layers': 1,
-#      'activation': nn.ReLU(),
-#     }
-# )
-
 body = ConvConfig({
     'n_layers': 3, 
     'conv_layers': [conv1, conv2, conv3],
@@ -154,10 +116,7 @@ network = NetworkConfig(
 )
 
 env = LightbotMinigridConfig(
-    {'puzzle_name': 'fractal_cross_0',
-     'agent_view_size': 7,
-     'toggle_ontop': False,
-     'reward_fn': '100,-1,-1,-1'
+    {
     }
 )
 
@@ -170,3 +129,14 @@ config = Config(
     }
 )
 
+def post_process(config):
+    # post processing
+    # if config.env.puzzle_name == 'fractal_cross_0':
+    #     print('000')
+    # elif config.env.puzzle_name == 'fractal_cross_1':
+    #     print('111')
+    # elif config.env.puzzle_name == 'fractal_cross_2':
+    #     print('222')
+    # else:
+    #     assert False
+    return config
