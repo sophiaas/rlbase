@@ -17,12 +17,12 @@ experiment = ExperimentConfig(
 )
 
 algorithm = SSCConfig(
-    {'n_hl_actions': 10,
-     'n_learning_stages': 10,
+    {'n_hl_actions': 8,
+     'n_learning_stages': 8,
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,
-     'load_dir': 'experiments/betterlr_ss/betterlr_ss_ppo_fourooms_lr0.001/evaluate/',
+     'load_dir': 'experiments/michael_runs/betterlr_ss/betterlr_ss_ppo_fourooms_lr0.001/evaluate/',
 #      'load_action_dir': 'experiments/ssc_lightbot/',
      'gamma': 0.99,
      'tau': 0.95,
