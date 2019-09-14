@@ -8,9 +8,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--model_dir', type=str, default=None,
                     help='Directory containing model to load') 
-parser.add_argument('--episode', type=int, default=20000,
+parser.add_argument('--episode', type=int, default=9980,#default=19980,
                     help='Episode to load from') 
-parser.add_argument('--n_eval_steps', type=int, default=2000,
+parser.add_argument('--n_eval_steps', type=int, default=100000,
                     help='Number of steps to evaluate') 
 parser.add_argument('--device', type=int, default=0,
                     help='Device to run on') 
@@ -29,3 +29,8 @@ def main():
             
 if __name__ == '__main__':
     main()
+
+
+"""
+
+"""

@@ -109,9 +109,16 @@ class PPO(BaseAgent):
         
     def step(self, state):
         # Run old policy:
-        env_data = self.env.get_data()
+        ########################################
+        # Hack for compatability with other mini-grid envs
+        try:
+            env_data = self.env.get_data()  # MC: possible off-by-one, but need to verify
+        except AttributeError:
+            env_data = None
+        ########################################
         action, log_prob = self.policy.act(state)
         next_state, reward, done, _ = self.env.step(action.item())
+        # self.env.render()
         if self.episode_steps == self.config.training.max_episode_length:
             done = True
 

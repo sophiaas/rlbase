@@ -1,6 +1,6 @@
 import os
 import argparse
-from agents import PPO, PPOC, SSC
+from agents import PPO, PPOC#, SSC
 import torch
 
 parser = argparse.ArgumentParser()
@@ -9,25 +9,29 @@ parser.add_argument('--config', type=str, default='lightbot',
                     help='Name of config') 
 parser.add_argument('--algo', type=str, default='ppo',
                     help='Algorithm') 
-parser.add_argument('--name', type=str, default=None,
+parser.add_argument('--name', type=str, default='',
                     help='Name to prepend to save dir') 
 parser.add_argument('--puzzle', type=str, default=None,
                     help='puzzle name for Lightbot and LightbotMinigrid environments')
 parser.add_argument('--n_disks', type=int, default=None,
                     help='number of disks for Hanoi environment')
-parser.add_argument('--device', type=int, default=0,
-                    help='Device to run on') 
+parser.add_argument('--lr', type=float, default=1e-4,
+                    help='learning rate')
+parser.add_argument('--device', type=int, default=-1,
+                    help='Device to run on')
+parser.add_argument('--seed', type=int, default=0,
+                    help='seed') 
 parser.add_argument('--load_dir', type=str, default=None,
                     help='Directory to load pre-trained model data from, for SSC') 
 
 args = parser.parse_args()
 
 if args.algo == 'ppo':
-    from configs.ppo import all_configs
+    from configs.ppo import all_configs, all_post_processors
     agent = PPO
 
 elif args.algo == 'ppoc':
-    from configs.ppoc import all_configs
+    from configs.ppoc import all_configs, all_post_processors
     agent = PPOC
     
 elif args.algo == 'ssc':
@@ -35,8 +39,9 @@ elif args.algo == 'ssc':
     agent = SSC
     
 config = all_configs[args.config]
+post_processor = all_post_processors[args.config]
 
-if args.name is not None:
+if args.name:
     config.experiment.name = args.name + '_' + config.experiment.name
     
 if args.puzzle:
@@ -46,9 +51,21 @@ if args.puzzle:
 if args.n_disks:
     config.env.n_disks = args.n_disks
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
-    
-if args.device is not None:
+
+
+config.training.lr = args.lr
+config.experiment.name += '_lr{}'.format(args.lr)
+config.experiment.name += '_steps'
+config.experiment.name += '_seed{}'.format(args.seed)
+
+config.experiment.base_dir += args.name + '/'
+
+if args.device >= 0:
     config.training.device = args.device
+else:
+    config.training.device = 'cpu'
+
+config = post_processor(config)
 
 def main():
     model = agent(config)
