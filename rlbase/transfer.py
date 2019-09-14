@@ -66,10 +66,10 @@ def main():
         else:
             transfer_config.training.device = 'cpu'
 
-        if checkpoint_config.algorithm.name == 'PPO':
-            agent = PPO(checkpoint_config)
-        elif checkpoint_config.algorithm.name == 'PPOC':
-            agent = PPOC(checkpoint_config)
+        if transfer_config.algorithm.name == 'PPO':
+            agent = PPO(transfer_config)
+        elif transfer_config.algorithm.name == 'PPOC':
+            agent = PPOC(transfer_config)
         else:
             raise ValueError('Unknown model type')
 
