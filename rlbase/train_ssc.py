@@ -54,6 +54,9 @@ if args.load_dir is not None:
 if args.action_file is not None:
     config.algorithm.load_action_dir += args.action_file + '/'
     
+else:
+    config.algorithm.load_action_dir = None
+    
 print(config.algorithm.load_action_dir)
 
 def main():

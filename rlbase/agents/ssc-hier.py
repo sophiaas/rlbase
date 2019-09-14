@@ -182,24 +182,38 @@ class SSC(PPO):
             total_reward = []
             done = False
 #             if valid:
-            for a in hl_action:
+            for j,a in enumerate(hl_action):
                 if done:
                     break
+                if j == 0:
+                    state_tensor = starting_state
+                else:
+                    state_tensor = torch.tensor(state).float().to(self.device)
+                    
+                action_tensor = torch.tensor(a).to(self.device)
+                
+                ll_logprob, ll_value, _ = self.policy.evaluate(state_tensor, action_tensor)        
+
                 next_state, reward, done, _ = self.env.step(a)
                 total_reward.append(reward)
+                
                 self.episode_steps += 1
 
                 if self.episode_steps == self.config.training.max_episode_length:
                     done = True
+                    
+                print(state_tensor)
+                    
                 ll_step_data = {
                     'reward': reward, 
                     'mask': bool(not done),
-                    'state': state,
-                    'action': action,
-                    'logprob': log_prob,
+                    'state': state_tensor,
+                    'action': action_tensor,
+                    'logprob': torch.squeeze(ll_logprob),
                     'env_data': env_data,
                     'action_length': 1
                 }
+                state = next_state
 
                 self.memory.push(ll_step_data)
 #             else:
@@ -236,7 +250,7 @@ class SSC(PPO):
         actions = torch.stack(self.memory.action+self.hl_memory.action).to(self.device)
         masks = torch.tensor(self.memory.mask+self.hl_memory.mask).to(self.device)
         rewards = self.memory.reward + self.hl_memory.reward
-        action_lengths = torch.tensor(self.memory.action_length+self.hl_memory_mask).to(self.device)
+        action_lengths = torch.tensor(self.memory.action_length+self.hl_memory.action_length).to(self.device)
         old_logprobs = torch.stack(self.memory.logprob+self.hl_memory_logprob).to(self.device)
 
         with torch.no_grad():

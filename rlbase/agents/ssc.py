@@ -31,9 +31,14 @@ class SSC(BaseAgent):
             if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
                 with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
                     self.action_dictionary = pickle.load(f)
-                full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
-                self.config.network.heads['actor'].outdim = full_action_dim
-                self.config.algorithm.n_actions = full_action_dim                                                                       
+                    print(self.action_dictionary)
+                    full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
+                    self.config.algorithm.n_actions = config.env.action_dim + len(self.action_dictionary)
+            else:
+                full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions
+                self.config.algorithm.n_actions = config.env.action_dim
+            self.config.network.heads['actor'].outdim = full_action_dim
+                                                                               
         else:
             self.action_dictionary = {}
             self.config.network.heads['actor'].outdim = config.env.action_dim \
@@ -146,8 +151,8 @@ class SSC(BaseAgent):
         if action.item() < self.config.env.action_dim:
             next_state, reward, done, _ = self.env.step(action.item())
             self.episode_steps += 1
-            if self.episode_steps == self.config.training.max_episode_length:
-                done = True
+#             if self.episode_steps == self.config.training.max_episode_length:
+#                 done = True
 
             step_data = {
                 'reward': reward, 
@@ -284,6 +289,9 @@ class SSC(BaseAgent):
             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
                 self.logger.push_episode_data(episode_data)
                 
+#             if self.episode_steps == self.config.experiment.max_episode_length:
+#                     done = True
+                
             if done:
                 episode_data = defaultdict(list, {'episode': int(self.episode)})
                 summary = {
@@ -313,106 +321,97 @@ class SSC(BaseAgent):
                 self.episode_steps = 0
                 episode_reward = 0
 
-#             if lower_timestep >= self.config.training.update_every:
-#                 self.update()
-#                 self.memory.clear()
-#                 lower_timestep = 0
-                
-            if timestep % self.config.training.update_every == 0:
+            if lower_timestep >= self.config.training.update_every:
                 self.update()
                 self.memory.clear()
+                lower_timestep = 0
+                
+#             if timestep % self.config.training.update_every == 0:
+#                 self.update()
+#                 self.memory.clear()
                 
             if total_lower_timestep >= self.config.training.max_timesteps:
                 break
             
         print('Training complete')
         
-#     def train(self):
-#         # TODO: Add handle resumes
-#         running_reward = 0
-#         avg_length = 0
-#         timestep = 0
-#         self.episode_steps = 0
+    def evaluate(self):
+        # TODO: Add handle resumes
+        timestep = 0
+        lower_timestep = 0
+        total_lower_timestep = 0
+        self.episode_steps = 0
+        
+        episode_reward = 0
+        episode_data = defaultdict(list, {'episode': int(self.episode)})
+        state = self.env.reset()
 
-#         # Iterate through episodes
-#         for i_episode in range(1, self.config.training.max_episodes+1):
-#             episode_reward = 0
-#             episode_data = defaultdict(list, {'episode': int(self.episode)})
-#             state = self.env.reset()
-            
-#             # Iterate through steps
-#             action_tracker = 1
-#             for t in range(1, self.config.training.max_episode_length+1):
-#                 if action_tracker == self.config.training.max_episode_length:
-#                     break
-#                 state = torch.from_numpy(state).float().to(self.device)
+        # Iterate through timesteps
+        print('Max Timesteps: {}'.format(self.config.training.max_timesteps))
+        for timestep in range(1, self.config.training.max_timesteps+1):
+
+            self.episode_steps += 1
+            state = torch.from_numpy(state).float().to(self.device)
+
+            with torch.no_grad():
+                transition, state, done = self.step(state)
                 
-#                 with torch.no_grad():
-#                     transition, state, done = self.step(state)
+            for key, val in transition.items():
+                episode_data[key].append(self.convert_data(val))
+
+            if type(transition['reward']) == list:
+                rew = np.sum(transition['reward'])
+            else:
+                rew = transition['reward']
+                
+            episode_reward += rew
+            lower_timestep += transition['action_length']
+            total_lower_timestep += transition['action_length']
+
+
+            if self.config.experiment.render:
+                self.env.render()
                     
-#                 timestep += 1
-
-#                 for key, val in transition.items():
-#                     episode_data[key].append(self.convert_data(val))
+            if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
+                self.logger.push_episode_data(episode_data)
                 
-#                 if type(transition['reward']) == list:
-#                     rew = np.sum(transition['reward'])
-#                 else:
-#                     rew = transition['reward']
-                               
-#                 episode_reward += rew
-#                 running_reward += rew
+            if done:
+                episode_data = defaultdict(list, {'episode': int(self.episode)})
+                summary = {
+                    'steps': total_lower_timestep,
+                    'return': episode_reward,
+                    'moves': self.episode_steps
+                }
+                self.logger.push(summary)
+                state = self.env.reset()
                 
-#                 if self.config.experiment.render:
-#                     self.env.render()
+                # Logging
+                if self.episode % self.config.experiment.log_interval == 0:
                     
-#                 if done:
-#                     break
+                    print('Episode {} \t Length: {} \t Reward: {}'.format(self.episode, 
+                                                                        round(self.episode_steps, 2), 
+                                                                        round(episode_reward, 2)))
 
-#                 if timestep % self.config.training.update_every == 0:
-#                     self.update()
-#                     self.memory.clear()
-            
-#             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
-#                 self.logger.push_episode_data(episode_data)
-                
-                
-#             # Logging
-#             if i_episode % self.config.experiment.log_interval == 0:
-                
-#                 print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, 
-#                                                                     round(self.running_moves, 2), 
-#                                                                     round(self.running_rewards, 2)))
-#                 self.logger.save()
-#                 self.logger.save_checkpoint(self)
-                
-#                 if self.config.experiment.save_episode_data:
-#                     self.logger.save_episode_data()
-                
-#                 self.logger.plot('running_rewards')
-#                 self.logger.plot('running_moves')
-                
-#             avg_length += self.episode_steps
-            
-# #             if i_episode % 10 == 0:
-# #                 self.update_running(running_reward/10, avg_length/10)
-# #                 running_reward = 0
-# #                 avg_length = 0
-# #                 self.logger.push(self.get_summary())
-#             if i_episode % 10 == 0:
-#                 self.update_running(running_reward/10, avg_length/10)
-#                 running_reward = 0
-#                 avg_length = 0
-#                 summary = {
-#                     'steps': timestep,
-#                     'return': episode_reward,
-#                     'moves': self.episode_steps
-#                 }
-#                 self.logger.push(summary)
-                
-#             self.episode_steps = 0
-#             self.episode += 1
-            
-#         print('Training complete')
+                    self.logger.save()
+                    self.logger.save_checkpoint(self)
 
+                if self.config.experiment.save_episode_data:
+                    self.logger.save_episode_data(self.episode)
+
+                    self.logger.plot('return')
+                    self.logger.plot('moves')
+                self.episode += 1
+                self.episode_steps = 0
+                episode_reward = 0
+
+            if timestep == self.config.eval.n_eval_steps:
+                break
+                
+#             if timestep % self.config.training.update_every == 0:
+#                 self.update()
+#                 self.memory.clear()
+                
+            
+        print('Training complete')
+        
 

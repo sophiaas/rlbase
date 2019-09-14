@@ -16,8 +16,8 @@ experiment = ExperimentConfig(
 )
 
 algorithm = OCConfig(
-    {'dc': 0.1, #deliberation cost
-     'n_options': 4,
+    {'dc': 0, #deliberation cost
+     'n_options': 8,
      'gamma': 0.99,
      'tau': 0.95
     }
@@ -25,7 +25,7 @@ algorithm = OCConfig(
 
 training = TrainingConfig(
     {'max_episode_length': 100,
-     'max_timesteps': 500000,
+     'max_timesteps': 100000,
      'update_every': 4096,
      'lr_scheduler': StepLR,
      'minibatch_size': 50,
