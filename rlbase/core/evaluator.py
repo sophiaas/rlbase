@@ -21,7 +21,11 @@ class Evaluator(object):
         self.checkpoint_config.training.max_episode_length = config.max_episode_length
         self.checkpoint_config.experiment.render = config.render
         self.checkpoint_config.experiment.save_episode_data = config.save_episode_data
-        self.checkpoint_config.experiment.log_interval = config.log_interval
+        self.checkpoint_config.experiment.log_interval = 1
+        self.checkpoint_config.experiment.num_steps_between_plot = 1
+        self.checkpoint_config.experiment.every_n_episodes = 1
+        
+        self.checkpoint_config.training.update_every = config.n_eval_steps
         
         print(self.checkpoint_config.algorithm.name)
             
