@@ -27,23 +27,24 @@ class SSC(BaseAgent):
         
         self.config.network.body.indim = self.config.env.obs_dim
         
-        if config.algorithm.load_dir is not None:
-            if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
-                with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
-                    self.action_dictionary = pickle.load(f)
-                    print(self.action_dictionary)
-                    full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions + len(self.action_dictionary)
-                    self.config.algorithm.n_actions = config.env.action_dim + len(self.action_dictionary)
-            else:
-                full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions
-                self.config.algorithm.n_actions = config.env.action_dim
-            self.config.network.heads['actor'].outdim = full_action_dim
+        if config.algorithm.load_dir and os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
+            with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
+                self.action_dictionary = pickle.load(f)
+                self.config.algorithm.n_actions = config.env.action_dim + len(self.action_dictionary)
+#             else:
+#                 full_action_dim = config.env.action_dim + config.algorithm.n_hl_actions
+#                 self.config.algorithm.n_actions = config.env.action_dim
+
+#             self.config.network.heads['actor'].outdim = full_action_dim
                                                                                
         else:
             self.action_dictionary = {}
-            self.config.network.heads['actor'].outdim = config.env.action_dim \
-                                                        + config.algorithm.n_hl_actions
+#             self.config.network.heads['actor'].outdim = config.env.action_dim \
+#                                                         + config.algorithm.n_hl_actions
             self.config.algorithm.n_actions = self.config.env.action_dim  
+    
+        self.config.network.heads['actor'].outdim = self.config.algorithm.max_actions
+        self.available_actions = self.config.algorithm.n_actions + self.config.algorithm.n_hl_actions
             
         self.policy = ActorCritic(config).to(self.device)
 
@@ -58,9 +59,10 @@ class SSC(BaseAgent):
         print('n actions: {}'.format(self.config.algorithm.n_actions))
         print('actor out dim: {}'.format(self.config.network.heads['actor'].outdim))
         
-        if self.config.algorithm.load_action_dir is None:
+        if self.config.algorithm.load_action_dir is None and self.config.algorithm.load_dir is not None:
 
             self.data = load_episode_data(config.algorithm.load_dir)
+            print('lengt of aciton data: {}'.format(len(self.data)))
             print('action data: {}'.format(list(self.data.action)))
             if self.env.name == 'hanoi':
                 action_data = []
@@ -76,7 +78,7 @@ class SSC(BaseAgent):
 
             self.action_dictionary = {**self.action_dictionary, **self.compressor.added_motifs}
             
-        else:
+        elif self.config.algorithm.load_action_dir:
             with open(self.config.algorithm.load_action_dir+'action_dictionary.p', 'rb') as f:
                 learned_action_dic = pickle.load(f)
                 self.action_dictionary = {**self.action_dictionary, **learned_action_dic}
@@ -85,6 +87,7 @@ class SSC(BaseAgent):
             pickle.dump(self.action_dictionary, f)
             
         print(self.action_dictionary)
+        print(self.policy)
         
         
     def discounted_advantages(self, rewards, masks, values, action_lengths):
@@ -147,7 +150,12 @@ class SSC(BaseAgent):
     def step(self, state):
         # Run old policy:
         env_data = self.env.get_data()
-        action, log_prob = self.policy.act(state)
+#         action = self.available_actions
+#         while action >= self.available_actions:
+            
+        action, log_prob = self.policy.act(state, cutoff=self.available_actions)
+#             if action.item() == 6:
+#                 print(action, log_prob)
         if action.item() < self.config.env.action_dim:
             next_state, reward, done, _ = self.env.step(action.item())
             self.episode_steps += 1
@@ -248,92 +256,127 @@ class SSC(BaseAgent):
         # Step learning rate
         self.lr_scheduler.step()
         
-        
-    def train(self):
-        # TODO: Add handle resumes
-        timestep = 0
-        lower_timestep = 0
-        total_lower_timestep = 0
+    def sample_episode(self, episode, step, run_avg):
+        episode_return = 0
         self.episode_steps = 0
-        
-        episode_reward = 0
-        episode_data = defaultdict(list, {'episode': int(self.episode)})
+        episode_data = defaultdict(list, {'episode': int(episode)})
         state = self.env.reset()
-
-        # Iterate through timesteps
-        print('Max Timesteps: {}'.format(self.config.training.max_timesteps))
-        for timestep in range(1, self.config.training.max_timesteps+1):
-
-            self.episode_steps += 1
+        t = 0
+        while t < self.config.training.update_every:
+#         for t in range(self.config.training.update_every):
             state = torch.from_numpy(state).float().to(self.device)
-
             with torch.no_grad():
                 transition, state, done = self.step(state)
-                
             for key, val in transition.items():
                 episode_data[key].append(self.convert_data(val))
-
             if type(transition['reward']) == list:
                 rew = np.sum(transition['reward'])
             else:
                 rew = transition['reward']
-                
-            episode_reward += rew
-            lower_timestep += transition['action_length']
-            total_lower_timestep += transition['action_length']
-
-
+            episode_return += rew
+            t += transition['action_length']
             if self.config.experiment.render:
                 self.env.render()
-                    
-            if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
-                self.logger.push_episode_data(episode_data)
-                
-#             if self.episode_steps == self.config.experiment.max_episode_length:
-#                     done = True
-                
-            if done:
-                episode_data = defaultdict(list, {'episode': int(self.episode)})
+            if (step+t+1) % self.config.experiment.num_steps_between_plot == 0:
                 summary = {
-                    'steps': total_lower_timestep,
-                    'return': episode_reward,
-                    'moves': self.episode_steps
+                    'steps': step+t+1,
+                    'return': run_avg.get_value('return'),
+                    'moves': run_avg.get_value('moves')
                 }
                 self.logger.push(summary)
-                state = self.env.reset()
+                # print('Pushed summary at step: {}'.format(step+t+1))
+            if done:
+                break
+            self.episode_steps += transition['action_length']
+        episode_length = t+1
+        return episode_data, episode_return, episode_length
+        
+        
+#     def train(self):
+#         # TODO: Add handle resumes
+#         timestep = 0
+#         lower_timestep = 0
+#         total_lower_timestep = 0
+#         self.episode_steps = 0
+        
+#         episode_reward = 0
+#         episode_data = defaultdict(list, {'episode': int(self.episode)})
+#         state = self.env.reset()
+
+#         # Iterate through timesteps
+#         print('Max Timesteps: {}'.format(self.config.training.max_timesteps))
+#         for timestep in range(1, self.config.training.max_timesteps+1):
+
+#             self.episode_steps += 1
+#             state = torch.from_numpy(state).float().to(self.device)
+
+#             with torch.no_grad():
+#                 transition, state, done = self.step(state)
                 
-                # Logging
-                if self.episode % self.config.experiment.log_interval == 0:
+#             for key, val in transition.items():
+#                 episode_data[key].append(self.convert_data(val))
+
+#             if type(transition['reward']) == list:
+#                 rew = np.sum(transition['reward'])
+#             else:
+#                 rew = transition['reward']
+                
+#             episode_reward += rew
+#             lower_timestep += transition['action_length']
+#             total_lower_timestep += transition['action_length']
+
+
+#             if self.config.experiment.render:
+#                 self.env.render()
                     
-                    print('Episode {} \t Length: {} \t Reward: {}'.format(self.episode, 
-                                                                        round(self.episode_steps, 2), 
-                                                                        round(episode_reward, 2)))
-
-                    self.logger.save()
-                    self.logger.save_checkpoint(self)
-
-                    if self.config.experiment.save_episode_data:
-                        self.logger.save_episode_data(self.episode)
-
-                    self.logger.plot('return')
-                    self.logger.plot('moves')
-                self.episode += 1
-                self.episode_steps = 0
-                episode_reward = 0
-
-            if lower_timestep >= self.config.training.update_every:
-                self.update()
-                self.memory.clear()
-                lower_timestep = 0
+#             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
+#                 self.logger.push_episode_data(episode_data)
                 
-#             if timestep % self.config.training.update_every == 0:
+# #             if self.episode_steps == self.config.experiment.max_episode_length:
+# #                     done = True
+                
+#             if done:
+#                 episode_data = defaultdict(list, {'episode': int(self.episode)})
+#                 summary = {
+#                     'steps': total_lower_timestep,
+#                     'return': episode_reward,
+#                     'moves': self.episode_steps
+#                 }
+#                 self.logger.push(summary)
+#                 state = self.env.reset()
+                
+#                 # Logging
+#                 if self.episode % self.config.experiment.log_interval == 0:
+                    
+#                     print('Episode {} \t Length: {} \t Reward: {}'.format(self.episode, 
+#                                                                         round(self.episode_steps, 2), 
+#                                                                         round(episode_reward, 2)))
+
+#                     self.logger.save()
+#                     self.logger.save_checkpoint(self)
+
+#                     if self.config.experiment.save_episode_data:
+#                         self.logger.save_episode_data(self.episode)
+
+#                     self.logger.plot('return')
+#                     self.logger.plot('moves')
+#                 self.episode += 1
+#                 self.episode_steps = 0
+#                 episode_reward = 0
+
+#             if lower_timestep >= self.config.training.update_every:
 #                 self.update()
 #                 self.memory.clear()
+#                 lower_timestep = 0
                 
-            if total_lower_timestep >= self.config.training.max_timesteps:
-                break
+# #             if timestep % self.config.training.update_every == 0:
+# #                 self.update()
+# #                 self.memory.clear()
+                
+#             if total_lower_timestep >= self.config.training.max_timesteps:
+#                 break
             
-        print('Training complete')
+#         print('Training complete')
         
     def evaluate(self):
         # TODO: Add handle resumes
