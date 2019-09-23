@@ -79,8 +79,10 @@ class SSCConfig(PPOConfig):
     
     def __init__(self, kwargs=None):
         super().__init__()
+        self.name = 'SSC'
         self.n_hl_actions = 4
         self.n_learning_stages = 4
+        self.max_actions = 40
         self.max_atoms = 20
         self.atom_length = 2
         self.sparsity = 0.9
