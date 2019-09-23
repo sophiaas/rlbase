@@ -18,11 +18,13 @@ class ActorCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
     
-    def actor_forward(self, state):
+    def actor_forward(self, state, cutoff=None):
         x = self.obs_transform_actor(state)
         
-        if type(self.config.env.action_space) == gym.spaces.Discrete:
+        if type(self.config.env.action_space) == gym.spaces.Discrete:                
             action_probs = self.actor(x)
+            if cutoff:
+                action_probs = action_probs[:cutoff]
             dist = Categorical(action_probs)
             
         elif type(self.config.env.action_space) == gym.spaces.Box:
@@ -40,8 +42,8 @@ class ActorCritic(nn.Module):
         value = torch.squeeze(value)
         return value
         
-    def act(self, state):
-        dist = self.actor_forward(state)
+    def act(self, state, cutoff=None):
+        dist = self.actor_forward(state, cutoff)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         return action, log_prob
