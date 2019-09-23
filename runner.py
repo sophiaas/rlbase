@@ -285,21 +285,24 @@ hanoi. Conclusion, should make the episode length longer
 def launch_hanoi():
     algos = ['ppo', 'ppoc']
     configs = {
-        'hanoi': ('n_disks', ['2', '3', '4']),}
+        'hanoi': ('n_disks', [
+            # '2', '3', 
+            '4']),}
 
     lrs = {
-        '2': [5e-4],
-        '3': [5e-4],
-        '4': [5e-4],
+        # '2': [1e-4, 5e-4],
+        # '3': [1e-4, 5e-4],
+        '4': [3.5e-4],
+        # '4': [1e-4, 5e-4],
     }
     seeds = [3,4,5]
 
     # group = 'betterlr_h_eplen500_me30000_hdim256_seeds_steps'
     # group = 'hanoi_maxteps5000000_seeds'
-    group = 'hanoi_maxsteps200000_seeds'
+    group = 'hanoi_maxsteps1000000_seeds_lrd95'
 
     gpu=True
-    num_gpus = 2
+    num_gpus = 4
     i = 0
 
     def heading(algo, config, r, i, s, gpu):
@@ -311,7 +314,7 @@ def launch_hanoi():
     def execute(command, i, num_gpus):
         command += ' &'
         print(command)
-        if args.for_real:
+        if args.for_real:   
             os.system(command)
 
         i += 1
@@ -335,22 +338,23 @@ def launch_minigrid():
     configs = {
         'lightbot_minigrid': 
             ('puzzle', [
-                # 'fractal_cross_0', 
-                'fractal_cross_1', 
+                'fractal_cross_0', 
+                # 'fractal_cross_1', 
                 # 'fractal_cross_2', 
-                # 'fractal_cross_0-1', 'fractal_cross_0-2'
+                'fractal_cross_0-1', 
+                # 'fractal_cross_0-2'
                 ]),
             # ('puzzle', ['fractal_cross_0-1', 'fractal_cross_0-2']),
     }
-    lrs = [5e-4]  # could try 1e-3
+    lrs = [1e-4]#, 5e-4]
     seeds = [3,4,5]
 
     gpu=True
-    num_gpus = 2
-    i = 0
+    num_gpus = 8
+    i = 4
 
     # group = 'lbot_minigrid_maxsteps5000000_seeds_lrd95'
-    group = 'lbot_minigrid_maxsteps200000_seeds_lrd95'
+    group = 'lbot_minigrid_maxsteps500000_seeds_lrd99'
 
     def heading(algo, config, r, i, s, gpu):
         prefix = 'CUDA_VISIBLE_DEVICES={} '.format(i) if gpu else ''
@@ -366,7 +370,7 @@ def launch_minigrid():
 
         i += 1
         if i >= num_gpus:
-            i = 0
+            i = 4
         return i
 
     for a, c, r, s in itertools.product(algos, configs.keys(), lrs, seeds):
