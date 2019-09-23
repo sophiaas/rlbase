@@ -12,8 +12,9 @@ experiment = ExperimentConfig(
 )
 
 algorithm = SSCConfig(
-    {'n_hl_actions': 10,
-     'n_learning_stages': 10,
+    {'n_hl_actions': 8,
+     'n_learning_stages': 8,
+     'max_actions': 40,
      'max_atoms': 20,
      'selection': 'choose_n',
      'selection_criterion': 1,

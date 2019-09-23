@@ -95,3 +95,5 @@ config = Config(
     }
 )
 
+def post_process(config):
+    return config

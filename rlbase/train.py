@@ -1,6 +1,6 @@
 import os
 import argparse
-from agents import PPO, PPOC#, SSC
+from agents import PPO, PPOC, SSC
 import torch
 
 parser = argparse.ArgumentParser()
@@ -35,7 +35,7 @@ elif args.algo == 'ppoc':
     agent = PPOC
     
 elif args.algo == 'ssc':
-    from configs.ssc import all_configs
+    from configs.ssc import all_configs, all_post_processors
     agent = SSC
     
 config = all_configs[args.config]
