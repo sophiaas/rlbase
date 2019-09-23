@@ -47,15 +47,23 @@ if args.name:
 if args.puzzle:
     config.env.puzzle_name = args.puzzle
     config.experiment.name = config.experiment.name + '_' + args.puzzle
+
+    config.training.max_episode_length = 500000
+    config.training.max_timesteps = 500000
     
 if args.n_disks:
     config.env.n_disks = args.n_disks
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
 
+    if args.n_disks == 4:
+        config.training.max_episode_length = 3000000
+        config.training.max_timesteps = 3000000
+
+config.experiment.name += '{}steps'.format(config.training.max_timesteps)
+
 
 config.training.lr = args.lr
 config.experiment.name += '_lr{}'.format(args.lr)
-config.experiment.name += '_steps'
 config.experiment.name += '_seed{}'.format(args.seed)
 
 config.experiment.base_dir += args.name + '/'
