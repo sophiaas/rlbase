@@ -27,13 +27,21 @@ args = parser.parse_args()
 
 def produce_transfer_config(config):
     if args.puzzle:
-        config.experiment.name += '_{}-to-{}_from-ep{}'.format(
+        config.experiment.name += '_{}-to-{}_from-ep{}_1000000'.format(
             config.env.puzzle_name, args.puzzle, args.episode)
         config.env.puzzle_name = args.puzzle
+
+        config.training.max_episode_length = 1000000  # just for minigrid, not for hanoi
+        config.training.max_timesteps = 1000000  # just for minigrid, not for hanoi
+
     if args.n_disks:
         config.experiment.name += '_{}-to-{}_from-ep{}'.format(
             config.env.n_disks, args.n_disks, args.episode)
         config.env.n_disks = args.n_disks
+
+        if args.n_disks == 4:
+            config.training.max_episode_length = 2000000
+            config.training.max_timesteps = 2000000
 
     config.training.lr = args.lr  # new lr from before?
     config.training.device = args.device
@@ -66,10 +74,10 @@ def main():
         else:
             transfer_config.training.device = 'cpu'
 
-        if checkpoint_config.algorithm.name == 'PPO':
-            agent = PPO(checkpoint_config)
-        elif checkpoint_config.algorithm.name == 'PPOC':
-            agent = PPOC(checkpoint_config)
+        if transfer_config.algorithm.name == 'PPO':
+            agent = PPO(transfer_config)
+        elif transfer_config.algorithm.name == 'PPOC':
+            agent = PPOC(transfer_config)
         else:
             raise ValueError('Unknown model type')
 
