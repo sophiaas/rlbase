@@ -10,6 +10,10 @@ args = parser.parse_args()
 
 prefix = '/home/mbchang/shared/ssc/rlbase/experiments/'
 
+
+def myround(x, base=1):
+    return base * round(x/base)
+
 model_dirs = {
     # # # hanoi
     # '/home/mbchang/shared/ssc/rlbase/experiments/betterlr_h_eplen500_me30000_hdim256/betterlr_h_eplen500_me30000_hdim256_ppo_hanoi_2disks_lr0.0005': 
@@ -47,6 +51,47 @@ model_dirs = {
     # prefix+'hanoi_maxteps5000000_seeds/hanoi_maxteps5000000_seeds_ppo_hanoi_2disks_lr0.0005_steps_seed5_2-to-3_from-ep3000_lr0.0005':
     #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 3000}],
 
+
+
+
+
+
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed3':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed4':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed5':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed3':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed4':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed5':
+    #     [{'n_disks': 3, 'lr': 5e-4, 'episode': 4000}],
+
+
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed3_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed4_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed5_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed3_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed4_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+    # prefix+'hanoi_maxsteps1000000_seeds_lrd99/hanoi_maxsteps1000000_seeds_lrd99_ppoc_hanoi_2disks_lr0.0001_steps_seed5_2-to-3_from-ep4000_lr0.0005':
+    #     [{'n_disks': 4, 'lr': 5e-4, 'episode': 4000}],
+
+
+
+
+
+# hanoi_maxsteps1000000_seeds_lrd99_ppo_hanoi_2disks_lr0.0001_steps_seed3_2-to-3_from-ep4000_lr0.0005
+
+
     ###############################
 
 
@@ -80,29 +125,70 @@ model_dirs = {
    #      [{'puzzle': 'fractal_cross_1', 'lr': 5e-4, 'episode': 3000}],
 
 
-    prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed3_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
-        [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
-    prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed4_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
-        [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
-    prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed5_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
-        [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
+    # prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed3_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
+    #     [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
+    # prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed4_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
+    #     [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
+    # prefix+'lbot_minigrid_maxsteps5000000_seeds/lbot_minigrid_maxsteps5000000_seeds_ppo_lightbot_minigrid_fractal_cross_0_lr0.0005_steps_seed5_fractal_cross_0-to-fractal_cross_1_from-ep3000_lr0.0005':
+    #     [{'puzzle': 'fractal_cross_2', 'lr': 5e-4, 'episode': 3000}],
+
+
+
+
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed3':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed4':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed5':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed3':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed4':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed5':
+    #     [{'puzzle': 'fractal_cross_0-1', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+
+    # attempt 2
+    prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed3':
+        [{'puzzle': 'fractal_cross_0-1', 'lr': 5e-4, 'episode': myround(20000/5.0, base=100)}],
+    prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed4':
+        [{'puzzle': 'fractal_cross_0-1', 'lr': 5e-4, 'episode': myround(20000/5.0, base=100)}],
+    prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed5':
+        [{'puzzle': 'fractal_cross_0-1', 'lr': 5e-4, 'episode': myround(20000/5.0, base=100)}],
+
+
+
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed3_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed4_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppo_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed5_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed3_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed4_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+    # prefix+'lbot_minigrid_maxsteps500000_seeds_lrd99/lbot_minigrid_maxsteps500000_seeds_lrd99_ppoc_lightbot_minigrid_fractal_cross_0_lr0.0001_steps_seed5_fractal_cross_0-to-fractal_cross_0-1_from-ep4000_1000000_lr0.0001':
+    #     [{'puzzle': 'fractal_cross_0-2', 'lr': 1e-4, 'episode': myround(20000/5.0, base=100)}],
+
+
 
 
     ###############################
 }
 
-def myround(x, base=1):
-    return base * round(x/base)
 
 prefix = 'python rlbase/transfer.py'
 
-num_gpus = 8
+num_gpus = 4
 i = 0
 
 for model_dir in model_dirs.keys():
     for config in model_dirs[model_dir]:
 
-        config['episode'] = myround(config['episode']/1.0, base=20)  # try to do this sort of transfer
+        # config['episode'] = myround(config['episode']/1.0, base=20)  # try to do this sort of transfer
 
         config_logstr = ''.join(['{}_{}'.format(k, v) for k, v in config.items()])
         logfile = os.path.join(model_dir, 'transfer_{}.txt'.format(config_logstr))
