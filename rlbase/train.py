@@ -48,7 +48,8 @@ if args.puzzle:
     config.env.puzzle_name = args.puzzle
     config.experiment.name = config.experiment.name + '_' + args.puzzle
 
-    config.training.max_episode_length = 500000
+    config.training.max_episode_length = 500
+#     config.training.max_episode_length = 500000
     config.training.max_timesteps = 500000
     config.training.lr_gamma = 0.99
     
@@ -57,7 +58,8 @@ if args.n_disks:
     config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
 
     if args.n_disks == 4:
-        config.training.max_episode_length = 3000000
+        config.training.max_episode_length = 500
+#         config.training.max_episode_length = 3000000
         config.training.max_timesteps = 3000000
 
     config.training.lr_gamma = 0.95
