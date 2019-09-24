@@ -4,7 +4,10 @@ import os
 import pickle
 from agents import SSC
 import torch
+from configs.ssc import all_configs
 import pprint
+import torch
+import torch.nn as nn
 
 parser = argparse.ArgumentParser()
 
@@ -36,48 +39,89 @@ parser.add_argument('--config', type=str, default='lightbot_minigrid',
 
 args = parser.parse_args()
 
-agent = SSC
-from configs.ssc import all_configs
     
 config = all_configs[args.config]
 
-if args.name is not None:
-    config.experiment.name = args.name + '_' + config.experiment.name
-    
-if args.puzzle:
-    config.env.puzzle_name = args.puzzle
-    config.experiment.name = config.experiment.name + '_' + args.puzzle
-    
-if args.n_disks:
-    config.env.n_disks = args.n_disks
-    config.experiment.name = config.experiment.name + '_' + str(args.n_disks) + 'disks'
-    
-if args.device is not None:
+def produce_transfer_config(config):
+    if args.puzzle:
+        config.experiment.name += '_{}-to-{}_from-ep{}_1000000'.format(
+            config.env.puzzle_name, args.puzzle, args.episode)
+        config.env.puzzle_name = args.puzzle
+
+        config.training.max_episode_length = 500  # just for minigrid, not for hanoi
+        config.training.max_timesteps = 1000000  # just for minigrid, not for hanoi
+
+    if args.n_disks:
+        config.experiment.name += '_{}-to-{}_from-ep{}'.format(
+            config.env.n_disks, args.n_disks, args.episode)
+        config.env.n_disks = args.n_disks
+
+        if args.n_disks == 4:
+            config.training.max_episode_length = 2000000
+            config.training.max_timesteps = 2000000
+
+    config.training.lr = args.lr  # new lr from before?
     config.training.device = args.device
-    
-if args.seed is not None:
-    config.experiment.seed = args.seed
-    config.experiment.name = config.experiment.name + '_seed{}'.format(args.seed)
-    
-if args.load_dir is not None:
-    config.algorithm.load_dir = args.load_dir
-    
-if args.action_file is not None:
-    config.algorithm.load_action_dir += args.action_file + '/'
-    
-else:
-    config.algorithm.load_action_dir = None
-    
-print(config.algorithm.load_action_dir)
+
+    if args.name is not None:
+        config.experiment.name = args.name + '_' + config.experiment.name
+
+    if args.device is not None:
+        config.training.device = args.device
+
+    if args.seed is not None:
+        config.experiment.seed = args.seed
+        config.experiment.name = config.experiment.name + '_seed{}'.format(args.seed)
+
+    if args.load_dir is not None:
+        config.algorithm.load_dir = args.load_dir
+
+    if args.action_file is not None:
+        config.algorithm.load_action_dir = 'rlbase/action_dictionaries/'+args.action_file + '/'
+
+    else:
+        config.algorithm.load_action_dir = None
+        
+    config.experiment.name += '_lr{}'.format(args.lr)
+
+    print(config.algorithm.load_action_dir)
+
+    return config
+
+def print_config(config):
+    vars_dict = vars(config)
+    print('config.experiment')
+    pprint.pprint(vars(config.experiment))
+    print('config.training')
+    pprint.pprint(vars(config.training))  
 
 def main():
     with open(args.model_dir+'config.p', 'rb') as f:
         checkpoint_config = pickle.load(f)
+        
+        print('{}\n{}\n{}'.format('#'*80,'CHECKPOINT CONFIG', '#'*80))
 
-        agent = SSC(config)
+        transfer_config = produce_transfer_config(checkpoint_config)
+        print_config(transfer_config)
 
-        checkpoint = torch.load(os.path.join(args.model_dir,'checkpoints','episode_{}'.format(args.episode)))
+
+        agent = SSC(transfer_config)
+
+        checkpoint = torch.load(os.path.join(args.model_dir,'checkpoints','episode_{}'.format(args.params_episode)))
         agent.policy.load_state_dict(checkpoint['policy'])
+#         print(torch.sum(agent.policy.actor.network[-1].weight.data[:5]))
+#         print(torch.sum(agent.policy.actor.network[-1].weight.data[5:10]))
+#         for l in agent.policy.actor.network:
+#             l.reset_parameters()
+#         for l in agent.policy.obs_transform_actor.conv_layers:
+#             if isinstance(l, nn.Conv2d):
+#                 l.reset_parameters()
+#         for l in agent.policy.obs_transform_actor.fc_layers:
+#             l.reset_parameters()
+
+#         print(torch.sum(agent.policy.actor.network[-1].weight.data[:5]))
+#         print(torch.sum(agent.policy.actor.network[-1].weight.data[5:10]))
+
 
         agent.train()
             
