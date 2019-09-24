@@ -94,6 +94,7 @@ class BaseAgent(object):
             run_avg.update_variable('return', episode_return)
             run_avg.update_variable('moves', episode_length)
             self.episode += 1
+            print(num_steps)
 
             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
                 print('Pushed episode data at episode: {}'.format(self.episode))
@@ -109,7 +110,7 @@ class BaseAgent(object):
         self.episode_steps = 0
         episode_data = defaultdict(list, {'episode': int(episode)})
         state = self.env.reset()
-        for t in range(self.config.training.update_every):
+        for t in range(self.config.training.max_episode_length):
             state = torch.from_numpy(state).float().to(self.device)
             with torch.no_grad():
                 transition, state, done = self.step(state)
@@ -126,10 +127,14 @@ class BaseAgent(object):
                 }
                 self.logger.push(summary)
                 # print('Pushed summary at step: {}'.format(step+t+1))
+
+            self.episode_steps += 1
+#             if self.episode_steps == self.config.training.max_episode_length:
+#                 done = True
             if done:
                 break
-            self.episode_steps += 1
         episode_length = t+1
+        print(episode_length)
         return episode_data, episode_return, episode_length
 
     def train(self):
