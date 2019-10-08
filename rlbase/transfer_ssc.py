@@ -23,7 +23,7 @@ parser.add_argument('--puzzle', type=str, default=None,
                     help='puzzle name for Lightbot and LightbotMinigrid environments')
 parser.add_argument('--n_disks', type=int, default=None,
                     help='number of disks for Hanoi environment')
-parser.add_argument('--lr', type=float, default=5e-4,
+parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
 parser.add_argument('--device', type=int, default=0,
                     help='Device to run on') 
@@ -45,17 +45,32 @@ config = all_configs[args.config]
 def produce_transfer_config(config):
     if args.puzzle:
         config.experiment.name += '_{}-to-{}_from-ep{}_1000000'.format(
-            config.env.puzzle_name, args.puzzle, args.episode)
+            config.env.puzzle_name, args.puzzle, args.params_episode)
         config.env.puzzle_name = args.puzzle
-
-        config.training.max_episode_length = 500  # just for minigrid, not for hanoi
-        config.training.max_timesteps = 1000000  # just for minigrid, not for hanoi
+        config.training.lr = 1e-4
+        config.training.lr_gamma = 0.99
+        if args.puzzle == 'fractal_cross_0-1':
+            config.training.max_episode_length = 1000000
+            config.training.max_timesteps = 1000000
+        elif args.puzzle == 'fractal_cross_0-2':
+            config.training.max_episode_length = 3000000
+            config.training.max_timesteps = 3000000
+            
+    if args.load_dir:
+        config.algorithm.n_hl_actions = 10
+        config.algorithm.n_learning_stages=10
 
     if args.n_disks:
         config.experiment.name += '_{}-to-{}_from-ep{}'.format(
-            config.env.n_disks, args.n_disks, args.episode)
+            config.env.n_disks, args.n_disks, args.params_episode)
         config.env.n_disks = args.n_disks
-
+        config.training.lr = 1e-4
+        config.training.lr_gamma = 0.95
+        
+        if args.n_disks == 3:
+            config.training.max_episode_length = 1000000
+            config.training.max_timesteps = 1000000
+            
         if args.n_disks == 4:
             config.training.max_episode_length = 2000000
             config.training.max_timesteps = 2000000
@@ -82,7 +97,7 @@ def produce_transfer_config(config):
     else:
         config.algorithm.load_action_dir = None
         
-    config.experiment.name += '_lr{}'.format(args.lr)
+    config.experiment.name += '_lr{}_lrgamma_{}'.format(args.lr, config.training.lr_gamma)
 
     print(config.algorithm.load_action_dir)
 
