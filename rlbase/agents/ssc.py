@@ -20,7 +20,7 @@ class SSC(BaseAgent):
     
     def __init__(self, config):
         super(SSC, self).__init__(config)
-#         self.eps = 0.1
+        self.eps = 0.1
         
         self.memory = Memory(features=['reward', 'mask', 'state', 'end_state', 
                                        'action', 'logprob', 'value', 'action_length',
@@ -77,6 +77,8 @@ class SSC(BaseAgent):
             print('added motifs: {}'.format(self.compressor.added_motifs))
 
             self.action_dictionary = {**self.action_dictionary, **self.compressor.added_motifs}
+        
+            print(self.config.algorithm.__dict__)
             
         elif self.config.algorithm.load_action_dir:
             with open(self.config.algorithm.load_action_dir+'action_dictionary.p', 'rb') as f:
@@ -112,6 +114,7 @@ class SSC(BaseAgent):
         for i in reversed(range(len(rewards))):
             
             if action_lengths[i] > 1:
+#                 r = rewards[i][0]
                 
                 if len(rewards[i]) < action_lengths[i]:
                     diff = action_lengths[i].cpu().data.numpy() - len(rewards[i])
@@ -153,25 +156,27 @@ class SSC(BaseAgent):
         return hl_action
 
         
-    def step(self, state, step):
+    def step(self, state):
         # Run old policy:
 #         print(step)
 
         env_data = self.env.get_data()
             
-        action, log_prob = self.policy.act(state, cutoff=self.available_actions)
-#         dist = self.policy.actor_forward(state, cutoff=self.available_actions)
-#         if np.random.rand() > self.eps:
-#         action = dist.sample()
-#         else:
-# #             print(self.config.algorithm.n_actions)
-# #             print(self.available_actions)
-#             sample = np.random.randint(self.config.env.action_dim, self.available_actions)
-#             action = torch.tensor(sample).to(self.device)
-#         log_prob = dist.log_prob(action)
-
+#         action, log_prob = self.policy.act(state, cutoff=self.available_actions)
+#         print(action.item())
+        dist = self.policy.actor_forward(state, cutoff=self.available_actions)
+        if np.random.rand() > self.eps:
+            action = dist.sample()
+        else:
+#             print(self.config.algorithm.n_actions)
+#             print(self.available_actions)
+            sample = np.random.randint(self.config.env.action_dim, self.available_actions)
+            action = torch.tensor(sample).to(self.device)
+        log_prob = dist.log_prob(action)
         
 #         action, log_prob = self.policy.act(state, cutoff=self.available_actions)
+        print(action.item())
+
 
         if action.item() < self.config.env.action_dim:
             next_state, reward, done, _ = self.env.step(action.item())
@@ -197,7 +202,7 @@ class SSC(BaseAgent):
             print(hl_action)
 
                 
-            total_reward = []
+#             total_reward = []
             done = False
             for a in hl_action:
                 if done:
@@ -205,9 +210,12 @@ class SSC(BaseAgent):
                                 
                 next_state, reward, done, _ = self.env.step(a)
                 
-                total_reward.append(reward)
+#                 total_reward.append(reward)
                 self.episode_steps += 1
-                
+            if done:
+                total_reward = [reward]
+            else:
+                total_reward = [-1]
 #                 if self.episode_steps >= self.config.training.max_episode_length:
 #                     done = True
                 
@@ -310,7 +318,7 @@ class SSC(BaseAgent):
 #         for t in range(self.config.training.update_every):
             state = torch.from_numpy(state).float().to(self.device)
             with torch.no_grad():
-                transition, state, done = self.step(state, step)
+                transition, state, done = self.step(state)
             for key, val in transition.items():
                 episode_data[key].append(self.convert_data(val))
             if type(transition['reward']) == list:
@@ -342,84 +350,5 @@ class SSC(BaseAgent):
         hl_episode_length = t
         return episode_data, episode_return, ll_episode_length, hl_episode_length
         
-        
-    def evaluate(self):
-        # TODO: Add handle resumes
-        timestep = 0
-        lower_timestep = 0
-        total_lower_timestep = 0
-        self.episode_steps = 0
-        
-        episode_reward = 0
-        episode_data = defaultdict(list, {'episode': int(self.episode)})
-        state = self.env.reset()
-
-        # Iterate through timesteps
-        print('Max Timesteps: {}'.format(self.config.training.max_timesteps))
-        for timestep in range(1, self.config.training.max_timesteps+1):
-
-            self.episode_steps += 1
-            state = torch.from_numpy(state).float().to(self.device)
-
-            with torch.no_grad():
-                transition, state, done = self.step(state)
-                
-            for key, val in transition.items():
-                episode_data[key].append(self.convert_data(val))
-
-            if type(transition['reward']) == list:
-                rew = np.sum(transition['reward'])
-            else:
-                rew = transition['reward']
-                
-            episode_reward += rew
-            lower_timestep += transition['action_length']
-            total_lower_timestep += transition['action_length']
-
-
-            if self.config.experiment.render:
-                self.env.render()
-                    
-            if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
-                self.logger.push_episode_data(episode_data)
-                
-            if done:
-                episode_data = defaultdict(list, {'episode': int(self.episode)})
-                summary = {
-                    'steps': total_lower_timestep,
-                    'return': episode_reward,
-                    'moves': self.episode_steps
-                }
-                self.logger.push(summary)
-                state = self.env.reset()
-                
-                # Logging
-                if self.episode % self.config.experiment.log_interval == 0:
-                    
-                    print('Episode {} \t Length: {} \t Reward: {}'.format(self.episode, 
-                                                                        round(self.episode_steps, 2), 
-                                                                        round(episode_reward, 2)))
-
-                    self.logger.save()
-                    self.logger.save_checkpoint(self)
-
-                if self.config.experiment.save_episode_data:
-                    self.logger.save_episode_data(self.episode)
-
-                    self.logger.plot('return')
-                    self.logger.plot('moves')
-                self.episode += 1
-                self.episode_steps = 0
-                episode_reward = 0
-
-            if timestep == self.config.eval.n_eval_steps:
-                break
-                
-#             if timestep % self.config.training.update_every == 0:
-#                 self.update()
-#                 self.memory.clear()
-                
-            
-        print('Training complete')
         
 
