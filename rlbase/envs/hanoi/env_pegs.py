@@ -21,12 +21,13 @@ register(
 
 class Hanoi(gym.Env):
             
-    def __init__(self, config, verbose=False):
+    def __init__(self, config, verbose=False, max_disks=8):
         self.config = config
         self.num_pegs = self.config.n_pegs
         self.initial_peg = self.config.initial_peg
         self.num_disks = self.config.n_disks
         self.continual = self.config.continual
+        self.max_disks = max_disks
         self.set_action_space()
         self.set_reward_fn(*[float(x) for x in config.reward_fn.split(',')])
         self.state = self.reset()
@@ -38,11 +39,6 @@ class Hanoi(gym.Env):
             print("\t Number of Disks: {}".format(self.num_disks))
             print("\t Number of Pegs: {}".format(self.num_pegs))
             print("\t Initial Peg: {}".format(self.initial_peg))
-            
-    def index_to_onehot(self, value, dim):
-        x = np.zeros(dim)
-        x[value] = 1
-        return list(x)
         
     def reset(self):
         self.done = False
@@ -54,7 +50,12 @@ class Hanoi(gym.Env):
         return copy.deepcopy(self.state)
     
     def reset_raw_state(self, initial_peg):
-        self.raw_state = [self.index_to_onehot(initial_peg, self.num_pegs)] * self.num_disks
+        self.raw_state = [[0]*self.max_disks]*self.num_pegs
+        start_peg = [0]*self.max_disks
+        stack = list(range(1, self.num_disks+1))
+        for i in stack:
+            start_peg[-i] = stack[-i]
+        self.raw_state[self.initial_peg] = start_peg
         
     def set_action_space(self):
         self.possible_moves = list(itertools.permutations(range(self.num_pegs), 2))
@@ -75,7 +76,12 @@ class Hanoi(gym.Env):
         self.raw_goal_states = []
         for i in range(self.num_pegs):
             if i != initial_peg:
-                goal = [self.index_to_onehot(i, self.num_pegs)] * self.num_disks                    
+                goal = [[0]*self.max_disks]*self.num_pegs
+                goal_peg = [0]*self.max_disks
+                stack = list(range(1, self.num_disks+1))
+                for j in stack:
+                    goal_peg[-j] = stack[-j]
+                goal[i] = goal_peg
                 self.raw_goal_states.append(goal)
    
     def set_reward_fn(self, ifdone, otherwise):
@@ -86,37 +92,64 @@ class Hanoi(gym.Env):
                 reward = otherwise  # -1
             return reward
         self.reward_fn = reward_fn
-        
+
     def empty_peg(self, peg):
-        peg_counts = np.sum(self.raw_state, axis=0)
-        if peg_counts[peg] == 0:
+        if peg == [0] * self.max_disks:
             return True
         else:
             return False
-
+        
     def get_top_disk(self, peg):
-        for i, disk in enumerate(self.raw_state):
-            if disk == self.index_to_onehot(peg, self.num_pegs):
-                return i
-        return 'empty'
-
+        top_disk_idx = np.nonzero(peg)[0][0]
+        top_disk = peg[top_disk_idx]    
+        return top_disk_idx, top_disk
+    
+    def dropping_action(self, peg, disk):
+        destination = self.raw_state[peg].copy()
+        if self.empty_peg(destination):
+            if self.verbose:
+                print('placing on peg {}'.format(peg))
+            dropoff_idx = -1
+            return 'valid', dropoff_idx
+        else:
+            top_disk_idx, top_disk = self.get_top_disk(destination)
+            if top_disk < disk:
+                return 'invalid', None
+            else:
+                if self.verbose:
+                    print('placing on peg {}'.format(peg))
+                dropoff_idx = top_disk_idx-1
+                return 'valid', dropoff_idx
+    
+    def pickup_action(self, peg):
+        pickup = self.raw_state[peg]
+        if self.empty_peg(pickup):
+            return 'invalid', None, None
+        top_disk_idx, top_disk = self.get_top_disk(pickup)
+        if self.verbose:
+            print('picking up from peg {}'.format(peg))
+        return 'valid', top_disk_idx, top_disk
+        
     def make_move(self, raw_state, action, test=False):
         new_raw_state = copy.deepcopy(raw_state)
         done = False
         done_continual = False
         move = self.action_key[action]
-        pickup_peg = move[0]
-        dropoff_peg = move[1]
-        pickup_disk = self.get_top_disk(pickup_peg)
-        if pickup_disk != 'empty':
-            dropoff_disk = self.get_top_disk(dropoff_peg)
-            if dropoff_disk == 'empty' or dropoff_disk > pickup_disk:
-                new_raw_state[pickup_disk] = self.index_to_onehot(dropoff_peg, self.num_pegs)
+        pickup = move[0]
+        dropoff = move[1]
+        status, pickup_idx, pickup_disk = self.pickup_action(pickup)
+        if status == 'valid':
+            status, dropoff_idx = self.dropping_action(dropoff, pickup_disk)
+            if status == 'valid':
+                new_raw_state[pickup][pickup_idx] = 0
+                destination = new_raw_state[dropoff].copy()
+                destination[dropoff_idx] = pickup_disk
+                new_raw_state[dropoff] = destination
         if new_raw_state in self.raw_goal_states:
             done_continual = True
             done = True
             if self.continual and not test:
-                self.initial_peg = dropoff_peg
+                self.initial_peg = dropoff
             else:
                 self.initial_peg = None
         reward = self.reward_fn(done, done_continual)
