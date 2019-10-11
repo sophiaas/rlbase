@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.distributions import Categorical
 
 from .base import BaseAgent
-from networks.option_critic import OptionCritic
+from policies.option_critic import OptionCritic
 from core.replay_buffer import Memory
 from envs import Lightbot
 

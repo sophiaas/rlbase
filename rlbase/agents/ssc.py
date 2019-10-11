@@ -10,7 +10,7 @@ from agents.base import BaseAgent
 from core.analysis import load_episode_data
 from core.replay_buffer import Memory
 from utils.hierarchical_sparse_compressor import HierarchicalSparseCompressor
-from networks.actor_critic import ActorCritic
+from policies.actor_critic import ActorCritic
 
 from collections import defaultdict
 
