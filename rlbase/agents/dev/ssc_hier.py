@@ -5,17 +5,18 @@ import os
 import pickle
 import copy
 
-from agents import PPO
+# from agents import PPO, BaseAgent
+from agents.base import BaseAgent
 from core.analysis import load_episode_data
 from core.replay_buffer import Memory
 from utils.hierarchical_sparse_compressor import HierarchicalSparseCompressor
-from networks.actor_critic import ActorCritic
+from policies.actor_critic import ActorCritic
 
 from collections import defaultdict
 
 
 
-class SSC(PPO):
+class SSC(BaseAgent):
     
     def __init__(self, config):
         super(SSC, self).__init__(config)
@@ -28,6 +29,8 @@ class SSC(PPO):
                                        'action', 'logprob', 'value', 'action_length',
                                        'env_data'])
         
+        self.config.network.body.indim = self.config.env.obs_dim
+
         if os.path.exists(config.algorithm.load_dir+'action_dictionary.p'):
             with open(config.algorithm.load_dir+'action_dictionary.p', 'rb') as f:
                 self.action_dictionary = pickle.load(f)
@@ -41,6 +44,14 @@ class SSC(PPO):
             self.config.algorithm.n_actions = self.config.env.action_dim  
             
         self.policy = ActorCritic(config).to(self.device)
+
+        self.optimizer = config.training.optim(self.policy.parameters(),
+                                          lr=self.config.training.lr) 
+
+        self.lr_scheduler = self.config.training.lr_scheduler(
+                                        self.optimizer, 
+                                        step_size=config.training.lr_step_interval, 
+                                        gamma=config.training.lr_gamma)
 
         print('n actions: {}'.format(self.config.algorithm.n_actions))
         print('actor out dim: {}'.format(self.config.network.heads['actor'].outdim))
@@ -88,14 +99,19 @@ class SSC(PPO):
         prev_advantage = 0
         
         for i in reversed(range(len(rewards))):
+            
             if action_lengths[i] > 1:
+                
                 if len(rewards[i]) < action_lengths[i]:
                     diff = action_lengths[i].cpu().data.numpy() - len(rewards[i])
                     rewards[i] += [0] * diff
+                    
                 discounted_rewards = [rewards[i][x] * gamma ** x for x in range(action_lengths[i])]
                 r = torch.tensor(np.sum(discounted_rewards))
+                prev_return *= gamma ** (action_lengths[i] - 1)
+        
             else:
-                r = torch.tensor(rewards[i])
+                r = rewards[i]
                 
             returns[i] = r + gamma * prev_return * masks[i]
             deltas[i] = r + gamma * prev_value * masks[i] - values[i]
@@ -109,36 +125,10 @@ class SSC(PPO):
         advantages = (advantages - advantages.mean()) / advantages.std()
         
         return advantages, returns
-    
-    def test_hl_action(self, hl_action):
-        valid = True
-        state = copy.deepcopy(self.env.raw_state)
-        for i, a in enumerate(hl_action):
-            original_state = copy.deepcopy(state)
-            state, test_reward, test_done = self.env.make_move(original_state, a, test=True)
-            if self.env.name == 'lightbot_minigrid' or self.env.name == 'lightbot':
-                mismatch = False
-                for key,val in state.items():
-                    if type(state[key]) == int or type(state[key]) == bool:
-                        if state[key] != original_state[key]:
-                            mismatch = True
-                    else:
-                        if list(state[key]) != list(original_state[key]):
-                            mismatch = True
-                if not mismatch:
-                    valid = False
-                    break
-            else:
-                if state == original_state:
-                    valid = False
-                    break  
-            if test_done and i < len(hl_action) - 1:
-                valid = False
-                break
-        return valid
+
     
     def uncompress_hl_action(self, hl_action):
-        n_primitives = self.config.env.action_dim
+        n_primitives = self.config.algorithm.n_actions
         primitive = False if np.any([x >= n_primitives for x in hl_action]) else True
         while not primitive:
             primitive_sequence = []
@@ -150,6 +140,7 @@ class SSC(PPO):
             hl_action = primitive_sequence
             primitive = False if np.any([x >= n_primitives for x in hl_action]) else True
         return hl_action
+
         
     def step(self, state):
         # Run old policy:
@@ -160,28 +151,26 @@ class SSC(PPO):
             self.episode_steps += 1
             if self.episode_steps == self.config.training.max_episode_length:
                 done = True
-            
+
             step_data = {
                 'reward': reward, 
-                'mask': bool(not done),
+                'mask': 0 if done else 1,
                 'state': state,
                 'action': action,
                 'logprob': log_prob,
                 'env_data': env_data,
                 'action_length': 1
             }
-            
+
             self.memory.push(step_data)
             
-
         else:
             action_list = self.action_dictionary[action.item()]
             hl_action = self.uncompress_hl_action(action_list)
                 
-#             valid = self.test_hl_action(hl_action)
             total_reward = []
             done = False
-#             if valid:
+            starting_state = copy.deepcopy(state)
             for j,a in enumerate(hl_action):
                 if done:
                     break
@@ -189,20 +178,17 @@ class SSC(PPO):
                     state_tensor = starting_state
                 else:
                     state_tensor = torch.tensor(state).float().to(self.device)
-                    
                 action_tensor = torch.tensor(a).to(self.device)
                 
-                ll_logprob, ll_value, _ = self.policy.evaluate(state_tensor, action_tensor)        
-
-                next_state, reward, done, _ = self.env.step(a)
-                total_reward.append(reward)
+                ll_logprob, ll_value, _ = self.policy.evaluate(state_tensor, action_tensor)  
                 
+                next_state, reward, done, _ = self.env.step(a)
+                
+                total_reward.append(reward)
                 self.episode_steps += 1
-
+                
                 if self.episode_steps == self.config.training.max_episode_length:
                     done = True
-                    
-                print(state_tensor)
                     
                 ll_step_data = {
                     'reward': reward, 
@@ -214,44 +200,39 @@ class SSC(PPO):
                     'action_length': 1
                 }
                 state = next_state
-
+                
                 self.memory.push(ll_step_data)
-#             else:
-#                 #NB: Hard coded!! This is not good, but will be changed later
-#                 diff = self.config.training.max_episode_length - self.episode_steps - 1
-#                 if len(action_list) > diff:
-#                     length = diff
-#                 else: 
-#                     length = len(action_list)
-#                 total_reward = [-1] * length
-#                 next_state = state.cpu().data.numpy()
-#                 self.episode_steps += length
-
                 
             step_data = {
                 'reward': total_reward, 
-                'mask': bool(not done),
-                'state': state,
+                'mask': 0 if done else 1,
+                'state': starting_state,
                 'action': action,
                 'logprob': log_prob,
                 'env_data': env_data,
                 'action_length': len(hl_action)
             }
-#             print(step_data)
         
             self.hl_memory.push(step_data) 
         
         return step_data, next_state, done
-               
-        
+ 
+
     def update(self):   
         # Convert list to tensor
+#         states = torch.stack(self.memory.state).to(self.device)
+#         actions = torch.stack(self.memory.action).to(self.device)
+#         masks = torch.tensor(self.memory.mask).to(self.device)
+#         rewards = self.memory.reward
+#         action_lengths = torch.tensor(self.memory.action_length).to(self.device)
+#         old_logprobs = torch.stack(self.memory.logprob).to(self.device)
+
         states = torch.stack(self.memory.state+self.hl_memory.state).to(self.device)
         actions = torch.stack(self.memory.action+self.hl_memory.action).to(self.device)
         masks = torch.tensor(self.memory.mask+self.hl_memory.mask).to(self.device)
         rewards = self.memory.reward + self.hl_memory.reward
         action_lengths = torch.tensor(self.memory.action_length+self.hl_memory.action_length).to(self.device)
-        old_logprobs = torch.stack(self.memory.logprob+self.hl_memory_logprob).to(self.device)
+        old_logprobs = torch.stack(self.memory.logprob+self.hl_memory.logprob).to(self.device)
 
         with torch.no_grad():
             values = self.policy.critic_forward(states)
@@ -317,8 +298,7 @@ class SSC(PPO):
                 with torch.no_grad():
                     transition, state, done = self.step(state)
                     
-                timestep += transition['action_length']
-                action_tracker += transition['action_length']
+                timestep += 1
 
                 for key, val in transition.items():
                     episode_data[key].append(self.convert_data(val))
@@ -372,3 +352,5 @@ class SSC(PPO):
             self.episode += 1
             
         print('Training complete')
+
+
