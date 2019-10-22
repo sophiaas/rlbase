@@ -18,7 +18,6 @@ register(
     entry_point='hanoi:Hanoi',
 )
 
-
 class Hanoi(gym.Env):
             
     def __init__(self, config, verbose=False):
@@ -40,7 +39,7 @@ class Hanoi(gym.Env):
             print("\t Initial Peg: {}".format(self.initial_peg))
             
     def index_to_onehot(self, value, dim):
-        x = np.zeros(dim)
+        x = [0] * dim
         x[value] = 1
         return list(x)
         
@@ -112,6 +111,7 @@ class Hanoi(gym.Env):
             dropoff_disk = self.get_top_disk(dropoff_peg)
             if dropoff_disk == 'empty' or dropoff_disk > pickup_disk:
                 new_raw_state[pickup_disk] = self.index_to_onehot(dropoff_peg, self.num_pegs)
+
         if new_raw_state in self.raw_goal_states:
             done_continual = True
             done = True
@@ -138,8 +138,7 @@ class Hanoi(gym.Env):
         return self.raw_state
     
     def _preprocess(self, raw_state):
-        processed = copy.deepcopy(raw_state)
-        return np.concatenate(processed)
+        return np.array(copy.deepcopy(raw_state))
 
     def render(self):
         print(self.raw_state)

@@ -228,7 +228,8 @@ class HanoiConfig(EnvConfig):
         env.reset()
         self.action_space = env.action_space
         self.action_dim = env.action_space.n
-        self.obs_dim = env.observation_space.n
+#         self.obs_dim = env.observation_space.n
+        self.obs_dim = env.num_pegs
         return env
         
         
