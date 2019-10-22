@@ -1,4 +1,4 @@
-name: deeprl
+name: deeprl2
 channels:
   - anaconda
   - pytorch
