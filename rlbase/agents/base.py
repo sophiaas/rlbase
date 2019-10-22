@@ -94,13 +94,11 @@ class BaseAgent(object):
             run_avg.update_variable('return', episode_return)
             run_avg.update_variable('moves', episode_length)
             self.episode += 1
-            print(num_steps)
 
             if self.config.experiment.save_episode_data and self.episode % self.config.experiment.every_n_episodes == 0:
                 print('Pushed episode data at episode: {}'.format(self.episode))
                 self.logger.push_episode_data(episode_data)
             if self.episode % self.config.experiment.log_interval == 0:
-                print('self.episode')
                 self.log(run_avg)
 
         return num_steps
@@ -110,7 +108,9 @@ class BaseAgent(object):
         self.episode_steps = 0
         episode_data = defaultdict(list, {'episode': int(episode)})
         state = self.env.reset()
+#         print('episode: {}'.format(episode))
         for t in range(self.config.training.max_episode_length):
+#             print('timestep: {}'.format(t))
             state = torch.from_numpy(state).float().to(self.device)
             with torch.no_grad():
                 transition, state, done = self.step(state)
@@ -125,8 +125,9 @@ class BaseAgent(object):
                     'return': run_avg.get_value('return'),
                     'moves': run_avg.get_value('moves')
                 }
+#                 print('SUMMARY: {}'.format(summary))
                 self.logger.push(summary)
-                # print('Pushed summary at step: {}'.format(step+t+1))
+#                 print('Pushed summary at step: {}'.format(step+t+1))
 
             self.episode_steps += 1
 #             if self.episode_steps == self.config.training.max_episode_length:
@@ -134,7 +135,6 @@ class BaseAgent(object):
             if done:
                 break
         episode_length = t+1
-        print(episode_length)
         return episode_data, episode_return, episode_length
 
     def train(self):
@@ -159,4 +159,7 @@ class BaseAgent(object):
         print('Evaluation complete')
     
     def step(self):
+        return NotImplementedError
+    
+    def update(self):
         return NotImplementedError
