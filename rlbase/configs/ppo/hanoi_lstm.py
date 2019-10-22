@@ -7,7 +7,8 @@ from networks.bodies import LSTMBody
 HDIM = 256
 
 experiment = ExperimentConfig(
-    {'name': 'ppo_hanoi',
+    {'name': 'ppo_hanoi_lstm',
+     'num_steps_between_plot': 100
     }
 )
 
@@ -19,6 +20,8 @@ training = TrainingConfig(
     {
     # 'max_episode_length': 500,
      # 'max_timesteps': 500000,
+     'log_interval': 20
+
     }
 )
 
