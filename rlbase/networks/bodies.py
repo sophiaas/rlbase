@@ -79,15 +79,68 @@ class FullyConnectedBody(BaseBody):
         return x
       
     
+# class LSTMBody(BaseBody):
+    
+#     def __init__(self, config):
+#         super(LSTMBody, self).__init__(config)
+#         self.indim = config.indim
+#         self.hdim = config.hdim
+#         self.nlayers = config.nlayers
+#         self.define_network()
+        
+#     def define_network(self):
+#         self.network = nn.LSTM(self.indim, self.hdim, self.nlayers)
+        
+#     def forward(self, x):
+#         x = x.unsqueeze(0)
+#         if len(x.shape) < 3:
+#             x = x.view(1, 1, -1)
+#         out, hidden = self.network(x)
+#         return out
+    
 class LSTMBody(BaseBody):
     
     def __init__(self, config):
         super(LSTMBody, self).__init__(config)
+        self.indim = config.indim
+        self.hdim = config.hdim
+        self.nlayers = config.nlayers
         self.define_network()
         
+#         self.init_weights(self.lstm_1)
+#         self.init_weights(self.lstm_2)
+        
+#     def init_weights(self, layer):
+#         for name, param in layer.named_parameters():
+#             if 'bias' in name:
+#                 nn.init.constant(param, 0.0)
+#             elif 'weight' in name:
+#                 nn.init.xavier_normal(param)
+        
     def define_network(self):
-        self.network = nn.LSTM(self.indim, self.hdim, self.nlayers)
+        self.network = nn.LSTMCell(input_size=self.indim, hidden_size=self.hdim)
+#         self.lstm_2 = nn.LSTMCell(input_size=self.indim, hidden_size=self.hdim)
+#         self.dropout = nn.Dropout(p=0.5)
         
     def forward(self, x):
-        return self.network(x)
+        if len(x.shape) < 3:
+            x = x.unsqueeze(0)
+#         print('X SHAPE: {}'.format(x.shape))
+        hidden = torch.zeros(x.shape[0], self.hdim)
+        out = torch.randn(x.shape[0], self.hdim)
+        
+        for i in range(x.shape[1]):
+            
+#         for i in x:
+#         for i in x.squeeze():
+            hidden, out = self.network(x[:,i,:], (hidden, out))
+
+
+#             hidden, out = self.network(i.unsqueeze(0), (hidden, out))
+
+#             print('HIDDEN SHAPE: {}'.format(hidden.shape))
+#             print('OUT SHAPE: {}'.format(out.shape))
+
+
+        return out
                 
