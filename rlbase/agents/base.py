@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from core.replay_buffer import Memory
 from core.logger import Logger
+from core.running_average import RunningAverage
 
 from torch.optim.lr_scheduler import StepLR
 
@@ -13,33 +14,6 @@ from torch.optim.lr_scheduler import StepLR
 """
 Base class for Deep RL agents
 """
-
-
-class RunningAverage(object):
-    def __init__(self):
-        super(RunningAverage, self).__init__()
-        self.data = {}
-        self.alpha = 0.01
-
-    def update_variable(self, key, value):
-        self.data[key] = value # overwrite
-        if 'running_'+key not in self.data:
-            self.data['running_'+key] = value
-        else:
-            self.data['running_'+key] = (1-self.alpha) * self.data['running_'+key] + self.alpha * value
-        return copy.deepcopy(self.data['running_'+key])
-
-    def get_value(self, key):
-        if 'running_'+key in self.data:
-            return self.data['running_'+key]
-        else:
-            assert KeyError, "Trying to access {} without giving it an initial value".format('running_'+key)
-
-    def get_last_value(self, key):
-        if key in self.data:
-            return self.data[key]
-        else:
-            assert KeyError
 
 
 class BaseAgent(object):
@@ -108,9 +82,7 @@ class BaseAgent(object):
         self.episode_steps = 0
         episode_data = defaultdict(list, {'episode': int(episode)})
         state = self.env.reset()
-#         print('episode: {}'.format(episode))
         for t in range(self.config.training.max_episode_length):
-#             print('timestep: {}'.format(t))
             state = torch.from_numpy(state).float().to(self.device)
             with torch.no_grad():
                 transition, state, done = self.step(state)
