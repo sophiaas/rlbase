@@ -125,13 +125,11 @@ class BaseAgent(object):
                     'return': run_avg.get_value('return'),
                     'moves': run_avg.get_value('moves')
                 }
-#                 print('SUMMARY: {}'.format(summary))
                 self.logger.push(summary)
-#                 print('Pushed summary at step: {}'.format(step+t+1))
 
             self.episode_steps += 1
-#             if self.episode_steps == self.config.training.max_episode_length:
-#                 done = True
+            if self.episode_steps == self.config.training.max_episode_length:
+                done = True
             if done:
                 break
         episode_length = t+1
