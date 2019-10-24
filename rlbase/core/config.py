@@ -33,7 +33,7 @@ class EvalConfig(BaseConfig):
         self.save_episode_data = True
         self.log_interval = 20
         self.set_attributes(kwargs)    
-                
+            
             
 """Algorithm Config"""
 
@@ -67,11 +67,7 @@ class OCConfig(PPOConfig):
         self.name = 'PPOC'
         self.n_options = 4
         self.dc = 0.1
-        self.block_ent_penalty = False
-        self.sample_blocks = True
-        self.n_block_samples = 10000
-        self.block_ent_coeff = 0.1
-        self.max_block_length = 8
+
         self.set_attributes(kwargs)
         
         
@@ -94,6 +90,31 @@ class SSCConfig(PPOConfig):
         self.load_dir = None
         self.load_action_dir = None
         self.set_attributes(kwargs)
+
+"""Additional Costs and Regularizers"""
+
+class CostConfig(BaseConfig):
+    
+    def __init__(self, kwargs=None):
+        self.block_entropy = False
+        self.mutual_information = False
+        self.set_attributes(kwargs)
+        
+class BlockEntropy(CostConfig):
+    
+    def __init__(self, kwargs=None):
+        self.block_entropy = True
+        self.sample_blocks = True
+        self.n_samples = 10000
+        self.block_ent_coeff = 0.1
+        self.max_block_length = 8
+        self.set_attributes(kwargs)   
+        
+class MutualInformation(CostConfig):
+    
+    def __init__(self, kwargs=None):
+        self.mutual_information = True
+        self.set_attributes(kwargs)   
 
         
 """Training Config"""
@@ -356,5 +377,6 @@ class Config(BaseConfig):
         self.network = None
         self.experiment = None
         self.training = None
+        self.costs = CostConfig()
         self.set_attributes(kwargs)
         

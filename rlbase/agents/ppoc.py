@@ -7,6 +7,7 @@ from .base import BaseAgent
 from policies.option_critic import OptionCritic
 from core.replay_buffer import Memory
 from envs import Lightbot
+from utils.block_entropy import get_blocks, sample_blocks, block_entropy
 
 
 """
@@ -39,6 +40,7 @@ class PPOC(BaseAgent):
         
         self.terminated = True
         self.current_option = None
+
         
     def set_network_configs(self):
         self.config.network.body.indim = self.config.env.obs_dim
@@ -80,7 +82,7 @@ class PPOC(BaseAgent):
         advantages = option_values - torch.sum(torch.mul(option_values_full, option_log_probs), 1) \
                         + torch.tensor(self.config.algorithm.dc).to(self.device)
         return advantages
-        
+
     def update(self):   
         
         # Convert list to tensor
@@ -117,10 +119,6 @@ class PPOC(BaseAgent):
                     term_probs = self.policy.term_forward(states[idxs], options[idxs])
                 
                     
-
-
-                    # TODO: Should term advantages be computed inside or outside loop?
-
                     # Finding Action Surrogate Loss:
 
                     ratios = torch.exp(action_logprobs - old_action_log_probs[idxs])
@@ -144,8 +142,17 @@ class PPOC(BaseAgent):
     #                                     + self.config.training.ent_coeff * option_dist_entropy)
 
                     loss = actor_loss + option_actor_loss + critic_loss + term_loss
-
-                    #TODO: separate term_loss and others (does this really matter tho?)
+        
+                    if self.config.costs.block_entropy:
+                        blockH = block_entropy(actions[idxs], masks[idxs], 
+                                               self.config.env.action_dim,
+                                               self.config.costs.max_block_length,
+                                               self.config.costs.sample_blocks,
+                                               self.config.costs.n_samples)
+                        bH_loss = self.config.costs.block_ent_coeff * blockH
+                        print('Block entropy: {}'.format(blockH))
+                        print('Block entropy loss: {}'.format(bH_loss))
+                        loss += blockH
 
                     # take gradient step
                     self.optimizer.zero_grad()
@@ -175,7 +182,6 @@ class PPOC(BaseAgent):
             'terminate': terminate,
             'env_data': env_data
         }
-#         TODO: This should fix the option-state coordination problem but verify
         
         self.current_option = next_option.data
         
