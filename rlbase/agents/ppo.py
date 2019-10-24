@@ -5,6 +5,9 @@ import torch.nn as nn
 from .base import BaseAgent
 from policies.actor_critic import ActorCritic
 from core.replay_buffer import Memory
+from utils.block_entropy import get_blocks, sample_blocks, block_entropy
+
+
 
 
 """
@@ -70,6 +73,7 @@ class PPO(BaseAgent):
         with torch.no_grad():
             values = self.policy.critic_forward(states)
             advantages, returns = self.discounted_advantages(rewards, masks, values)
+            
                 
         # Optimize policy for K epochs:
         for _ in range(self.config.algorithm.optim_epochs):
@@ -79,6 +83,11 @@ class PPO(BaseAgent):
                 idxs = permutation[m:m+self.config.training.minibatch_size]
 
                 # Evaluate actions :
+#                 print('MINIBATCH SIZE: {}'.format(self.config.training.minibatch_size))
+#                 print('STATES IDXS SHAPE: {}'.format(states[idxs].shape))
+#                 print('ACTIONS IDXS SHAPE: {}'.format(actions[idxs].shape))
+
+
                 logprobs, state_values, dist_entropy = self.policy.evaluate(
                                                                 states[idxs], 
                                                                 actions[idxs])
@@ -97,6 +106,17 @@ class PPO(BaseAgent):
                 loss = actor_loss + critic_loss
 #                      + entropy_penalty
                 #TODO: add back in the entropy penalty
+    
+                if self.config.costs.block_entropy:
+                    blockH = block_entropy(actions[idxs], masks[idxs], 
+                                           self.config.env.action_dim,
+                                           self.config.costs.max_block_length,
+                                           self.config.costs.sample_blocks,
+                                           self.config.costs.n_samples)
+                    bH_loss = self.config.costs.block_ent_coeff * blockH
+                    print('Block entropy: {}'.format(blockH))
+                    print('Block entropy loss: {}'.format(bH_loss))
+                    loss += blockH
 
                 # Take gradient step
                 self.optimizer.zero_grad()
