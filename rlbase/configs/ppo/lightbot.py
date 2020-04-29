@@ -6,69 +6,63 @@ from networks.bodies import FullyConnectedBody
 
 HDIM = 256
 
-experiment = ExperimentConfig(
-    {'name': 'ppo_lightbot',
-    }
-)
+experiment = ExperimentConfig({"name": "ppo_lightbot",})
 
-algorithm = PPOConfig(
-    {}
-)
+algorithm = PPOConfig({})
 
 training = TrainingConfig(
     {
-    # 'lr': 5e-4,
-    # 'max_timesteps': 500000,
+        # 'lr': 5e-4,
+        # 'max_timesteps': 500000,
     }
 )
 
 policy_head = FCConfig(
-    {'hdim': HDIM, 
-     'nlayers': 1,
-     'activation': nn.ReLU(),
-     'out_activation': nn.Softmax(dim=-1),
-     'architecture': FullyConnectedHead
+    {
+        "hdim": HDIM,
+        "nlayers": 1,
+        "activation": nn.ReLU(),
+        "out_activation": nn.Softmax(dim=-1),
+        "architecture": FullyConnectedHead,
     }
 )
 
 value_head = FCConfig(
-    {'hdim': HDIM, 
-     'nlayers': 1, #1
-     'out_activation': None,
-     'architecture': FullyConnectedHead,
-     'outdim': 1
+    {
+        "hdim": HDIM,
+        "nlayers": 1,  # 1
+        "out_activation": None,
+        "architecture": FullyConnectedHead,
+        "outdim": 1,
     }
 )
 
 body = FCConfig(
-    {'hdim': HDIM, 
-     'nlayers': 2, 
-     'activation': nn.ReLU(),
-     'out_activation': nn.ReLU(),
-     'architecture': FullyConnectedBody
+    {
+        "hdim": HDIM,
+        "nlayers": 2,
+        "activation": nn.ReLU(),
+        "out_activation": nn.ReLU(),
+        "architecture": FullyConnectedBody,
     }
 )
 
 network = NetworkConfig(
-    {'heads': {'actor': policy_head, 'critic': value_head},
-     'body': body
-    }
+    {"heads": {"actor": policy_head, "critic": value_head}, "body": body}
 )
 
-env = LightbotConfig(
-    {
-    }
-)
+env = LightbotConfig({})
 
 config = Config(
-    {'experiment': experiment, 
-     'algorithm': algorithm, 
-     'training': training, 
-     'network': network, 
-     'env': env
+    {
+        "experiment": experiment,
+        "algorithm": algorithm,
+        "training": training,
+        "network": network,
+        "env": env,
     }
 )
+
 
 def post_process(config):
     return config
-

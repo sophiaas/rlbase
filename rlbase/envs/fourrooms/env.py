@@ -6,12 +6,12 @@ import torch
 
 
 """
-The four rooms environment, adapted from 
+The four rooms environment, adapted from
 https://github.com/jeanharb/option_critic/blob/master/fourrooms/fourrooms.py
 """
 
+
 class FourRooms(gym.Env):
-    
     def __init__(self):
         layout = """\
 wwwwwwwwwwwww
@@ -28,29 +28,39 @@ w           w
 w     w     w
 wwwwwwwwwwwww
 """
-        self.occupancy = np.array([list(map(lambda c: 1 if c=='w' else 0, line)) for line in layout.splitlines()])
+        self.occupancy = np.array(
+            [
+                list(map(lambda c: 1 if c == "w" else 0, line))
+                for line in layout.splitlines()
+            ]
+        )
 
         # From any state the agent can perform one of four actions, up, down, left or right
         self.set_action_space()
         self.observation_space = spaces.Discrete(np.sum(self.occupancy == 0))
         self.obs_dim = self.observation_space.n
-        self.directions = [np.array((-1,0)), np.array((1,0)), np.array((0,-1)), np.array((0,1))]
+        self.directions = [
+            np.array((-1, 0)),
+            np.array((1, 0)),
+            np.array((0, -1)),
+            np.array((0, 1)),
+        ]
         self.rng = np.random.RandomState(1234)
         self.tostate = {}
         statenum = 0
         for i in range(13):
             for j in range(13):
                 if self.occupancy[i, j] == 0:
-                    self.tostate[(i,j)] = statenum
+                    self.tostate[(i, j)] = statenum
                     statenum += 1
-        self.tocell = {v:k for k,v in self.tostate.items()}
+        self.tocell = {v: k for k, v in self.tostate.items()}
 
         self.goal = 62
         self.init_states = list(range(self.observation_space.n))
         self.init_states.remove(self.goal)
         self.frame_count = 0
         self.allow_impossible = True
-        self.name = 'fourrooms'
+        self.name = "fourrooms"
 
     def empty_around(self, cell):
         avail = []
@@ -76,21 +86,20 @@ wwwwwwwwwwwww
         nextcell = tuple(self.currentcell + self.directions[action])
         if not self.occupancy[nextcell]:
             self.currentcell = nextcell
-#             if self.rng.uniform() < 1/3.:
-#                 empty_cells = self.empty_around(self.currentcell)
-#                 self.currentcell = empty_cells[self.rng.randint(len(empty_cells))]
+        #             if self.rng.uniform() < 1/3.:
+        #                 empty_cells = self.empty_around(self.currentcell)
+        #                 self.currentcell = empty_cells[self.rng.randint(len(empty_cells))]
 
         raw_state = self.tostate[self.currentcell]
         state = self.index_to_onehot(raw_state, self.observation_space.n)
         if raw_state == self.goal:
             done = True
             reward = 100.0
-        else: 
+        else:
             reward = -1.0
             done = False
         return state, reward, done
-    
-        
+
     def step(self, action):
         """
         #TODO: add back in stochasticity?
@@ -104,18 +113,18 @@ wwwwwwwwwwwww
         """
         if type(action) == torch.Tensor:
             action = action.item()
-            
+
         state, reward, done = self.make_move(action)
         frame_count = 1
         self.frame_count += frame_count
-        
+
         data = self.get_data()
-        
+
         return state, reward, done, data
 
     def get_data(self):
-        return {'coords': self.currentcell}
-    
+        return {"coords": self.currentcell}
+
     def set_action_space(self):
         # Actions are discrete integer values
         self.n_actions = 4
@@ -123,19 +132,20 @@ wwwwwwwwwwwww
 
     def get_frame_count(self):
         return self.frame_count
-    
+
     def get_obs_dim(self):
         return self.obs_dim
-    
+
     def _preprocess(self, state):
         return state
-    
+
     def get_num_actions(self):
         return self.action_space.n
 
+
 register(
-    id='Fourrooms-v0',
-    entry_point='fourrooms:Fourrooms',
-#     timestep_limit=20000,
+    id="Fourrooms-v0",
+    entry_point="fourrooms:Fourrooms",
+    #     timestep_limit=20000,
     reward_threshold=100,
 )
